@@ -1,13 +1,9 @@
-from re import A
-import socket
 import threading
-import random
+import time
 import q3huff
-import enum
-import copy
-import defines
 import clientstate
 import protocol
+import utils
 
 # ========================
 #   External aliases
@@ -23,41 +19,121 @@ protocol_q3v68 = protocol.q3v68
 protocol_q3v71 = protocol.q3v71
 
 # ========================
-#   UPD core
-
-class _udp_packet:
-    def __init__(self, response):
-        self.data = response[0]
-        self.host = response[1][0]
-        self.port = response[1][1]
-
-class _udp_transport:
-    def __init__(self, host: str, port: int, timeout: float) -> None:
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._socket.connect((host, port))
-        self._socket.settimeout(timeout)
-        
-    def send(self, data : bytes):
-        self._socket.send(data)
-
-    def recv(self, size) -> _udp_packet:
-        return _udp_packet( self._socket.recvfrom(size) )
-
-# ========================
 #   Quake3 NET core
 
-class connection:
+class worker:
+    def __init__(self) -> None:
+        self.__active = True
+        self.__lock = threading.Lock()
+        self.__worker = threading.Thread(target=self._worker_entrypoint)
+        self.__worker.start()
+
+    def __del__(self):
+        self.terminate()
+
+    def _terminate(self):
+        self.__active = False
+        self.__worker.join()
+
+    @property
+    def active(self) -> bool:
+        with self.__lock:
+            return self.__active
+
+    def _worker_entrypoint(self):
+        raise NotImplementedError
+
+class connection(worker):
+
+    __DISCONNECT_TIMEOUT = 5.0
+
     def __init__(self, host, port, protocol = protocol_q3v68,
-                 handler = events_handler, uinfo: userinfo = None):
+                 handler = events_handler, uinfo: userinfo = None, fps: int = 60):
+        assert(1 <= fps <= 125)
+        # FPS
+        self._fps = fps
+        self._frame_timeout = 1.0 / self._fps
         # Network
         self._host = host
         self._port = port
-        self._transport = _udp_transport(host, port, 0.1)
+        self._transport = utils.udp_transport(host, port, self._frame_timeout)
         # Protocol
         self._gs_evaluator = clientstate.evaluator(handler, uinfo)
         self._protocol = protocol(self._gs_evaluator)
+        # Request
+        self._lock = threading.Lock()
+        # Open worker thread
+        super().__init__()
 
-    def __del__(self):
-        pass
+    def connect(self):
+        raise NotImplementedError
+
+    def disconnect(self):
+        raise NotImplementedError
+
+    def terminate(self):
+        self._terminate()
+
+    def request(self, request):
+        raise NotImplementedError
+
+    def send(self, command):
+        raise NotImplementedError
+
+    @property
+    def gamestate(self):
+        return self._gs_evaluator.gamestate
+
+    def _worker_entrypoint(self):
+        
+        timeout_counter = 0
+        timeout_max = int(self.__DISCONNECT_TIMEOUT / self._frame_timeout)
+
+        while self.active:
+
+            connected = self.gamestate.is_connected()
+            
+            try:
+                packet = self._transport.recv(0x4000)
+            except TimeoutError:
+                timeout_counter += 1
+                if connected:
+                    if timeout_counter > timeout_max:
+                        #TODO: force gamestate to disconnect
+                        break
+                    
+                    with self._lock:
+                        self._transport.send( self._protocol.client_frame() )
+
+                # go to a next frame
+                continue
+            
+            # reset timeout counter because we got a packet from the server
+            timeout_counter = 0
+
+            with self._lock:
+                response = self._protocol.handle_packet(packet.data)
+                #TODO: apply response
+
+                # send client state in the end of the frame
+                self._transport.send( self._protocol.client_frame() )
+
+                # with self._lock:
+                #     reader = q3huff.Reader(packet.data)
+                #     response = self.__protocol.handle_packet(reader, len(packet.data))
+
+                #     if self.__request_active:
+                #         if self.__request.sequence == -1:
+                #             if response.command == self.__request.response:
+                #                 self.__request_response = response
+                #                 self.__request_active = False
+                #                 self.__request_event.set()
+                #         else:
+                #             if self.__gamestate.reliable_ack >= self.__request.sequence:
+                #                 self.__request_response = response
+                #                 self.__request_active = False
+                #                 self.__request_event.set()
+
+            
 
  

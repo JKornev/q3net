@@ -32,25 +32,6 @@ class gamestate:
         self._pure          = False
         self._checksum_feed = 0
 
-    def __default_userinfo(self):
-        ui = userinfo()
-        ui['client']         = 'Q3 1.32b'
-        ui['name']           = 'UnnamedPlayer'
-        ui['model']          = 'sarge'
-        ui['headmodel']      = 'sarge'
-        ui['team_model']     = 'james'
-        ui['team_headmodel'] = 'james'
-        ui['handicap']       = 100
-        ui['teamtask']       = 0
-        ui['sex']            = 'male'
-        ui['color1']         = 1
-        ui['color2']         = 2
-        ui['rate']           = 25000
-        ui['snaps']          = 40
-        ui['cl_maxpackets']  = 125
-        ui['cl_timeNudge']   = 0
-        ui['cl_anonymous']   = 0
-
     @property
     def conn_state(self):
         with self._lock:
@@ -101,6 +82,29 @@ class gamestate:
         with self._lock:
             return self._checksum_feed
 
+    def __default_userinfo(self):
+        ui = userinfo()
+        ui['client']         = 'Q3 1.32b'
+        ui['name']           = 'UnnamedPlayer'
+        ui['model']          = 'sarge'
+        ui['headmodel']      = 'sarge'
+        ui['team_model']     = 'james'
+        ui['team_headmodel'] = 'james'
+        ui['handicap']       = 100
+        ui['teamtask']       = 0
+        ui['sex']            = 'male'
+        ui['color1']         = 1
+        ui['color2']         = 2
+        ui['rate']           = 25000
+        ui['snaps']          = 40
+        ui['cl_maxpackets']  = 125
+        ui['cl_timeNudge']   = 0
+        ui['cl_anonymous']   = 0
+
+    def is_connected(self) -> bool:
+        return self._state.value >= defines.connstate_t.CA_CONNECTED.value
+
+
 class events_handler:
     def event_connected(self, srv_id: int):
         pass # stub
@@ -118,3 +122,8 @@ class evaluator(gamestate):
     def __init__(self, handler: events_handler, uinfo: userinfo) -> None:
         super().__init__(uinfo)
         self._handler = handler()
+
+    @property
+    def gamestate(self) -> gamestate:
+        return self
+    

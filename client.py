@@ -1,6 +1,5 @@
 import time
 import q3net
-import clientstate
 
 def client():
     connection = q3net.connection("localhost", 27960)
@@ -40,7 +39,10 @@ if __name__ == '__main__':
     ui['cl_timeNudge']   = 0
     ui['cl_anonymous']   = 0
 
-    c = q3net.connection("localhost", 27960, usrinfo=ui)
+    c = q3net.connection("localhost", 27960, uinfo=ui)
+    time.sleep(1)
+    c.terminate()
+    
     pass
     #print(ui.serialize())
     #ui.deserialize(ui.serialize())
