@@ -1,5 +1,5 @@
 import socket
-
+import q3huff
 class udp_packet:
     def __init__(self, response):
         self.data = response[0]
@@ -17,3 +17,32 @@ class udp_transport:
 
     def recv(self, size) -> udp_packet:
         return udp_packet( self._socket.recvfrom(size) )
+
+class reader:
+    def __init__(self, data) -> None:
+        self._reader = q3huff.Reader(data)
+
+    def compression(self, enable):
+        self._reader.oob = not enable
+
+    def read_int(self):
+        return self._int(4, True)
+    
+    def read_uint(self):
+        return self._int(4, False)
+
+    def read_short(self):
+        return self._int(2, True)
+    
+    def read_ushort(self):
+        return self._int(2, False)
+
+    def read_char(self):
+        return self._int(2, True)
+    
+    def read_uchar(self):
+        return self._int(2, False)
+
+    def _int(self, size, signed):
+        return int.from_bytes(self._reader.read_data(size), "little", signed=signed)
+ 

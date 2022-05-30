@@ -1,6 +1,6 @@
 import threading
+import queue
 import time
-import q3huff
 import clientstate
 import protocol
 import utils
@@ -43,6 +43,25 @@ class worker:
     def _worker_entrypoint(self):
         raise NotImplementedError
 
+class requests_queue:
+
+    def push(self, request):
+        pass
+
+    def pop(self):
+        pass
+
+
+class responses_queue:
+
+    def push(self):
+        pass
+
+    def apply_response(self, response):
+        pass
+
+
+
 class connection(worker):
 
     __DISCONNECT_TIMEOUT = 5.0
@@ -62,6 +81,7 @@ class connection(worker):
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._lock = threading.Lock()
+        self._queue = queue.Queue()
         # Open worker thread
         super().__init__()
 
@@ -90,14 +110,12 @@ class connection(worker):
         timeout_max = int(self.__DISCONNECT_TIMEOUT / self._frame_timeout)
 
         while self.active:
-
-            connected = self.gamestate.is_connected()
             
             try:
-                packet = self._transport.recv(0x4000)
+                raw = self._transport.recv(0x4000)
             except TimeoutError:
                 timeout_counter += 1
-                if connected:
+                if self.gamestate.is_connected():
                     if timeout_counter > timeout_max:
                         #TODO: force gamestate to disconnect
                         break
@@ -112,7 +130,7 @@ class connection(worker):
             timeout_counter = 0
 
             with self._lock:
-                response = self._protocol.handle_packet(packet.data)
+                packet = self._protocol.handle_packet(raw.data)
                 #TODO: apply response
 
                 # send client state in the end of the frame

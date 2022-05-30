@@ -106,10 +106,14 @@ class gamestate:
 
 
 class events_handler:
+
     def event_connected(self, srv_id: int):
         pass # stub
 
-    def event_disconnected(self):
+    def event_disconnected(self, reason: str):
+        pass # stub
+
+    def event_packet(self, packet):
         pass # stub
 
     def event_command(self, seq: int, cmd: str):
@@ -126,4 +130,7 @@ class evaluator(gamestate):
     @property
     def gamestate(self) -> gamestate:
         return self
+
+    def execute(self, packet):
+        pass
     
