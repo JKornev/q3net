@@ -1,5 +1,9 @@
 import socket
 import q3huff
+
+# ========================
+#   Network
+
 class udp_packet:
     def __init__(self, response):
         self.data = response[0]
@@ -17,6 +21,12 @@ class udp_transport:
 
     def recv(self, size) -> udp_packet:
         return udp_packet( self._socket.recvfrom(size) )
+
+# ========================
+#   Serialization
+
+def int_to_bytes(value: int):
+    return value.to_bytes(4, "little", signed=True)
 
 class reader:
     def __init__(self, data) -> None:
@@ -38,10 +48,13 @@ class reader:
         return self._int(2, False)
 
     def read_char(self):
-        return self._int(2, True)
+        return self._int(1, True)
     
     def read_uchar(self):
-        return self._int(2, False)
+        return self._int(1, False)
+
+    def read_string(self):
+        return self._reader.read_string()
 
     def _int(self, size, signed):
         return int.from_bytes(self._reader.read_data(size), "little", signed=signed)

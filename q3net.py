@@ -1,6 +1,7 @@
 import threading
 import queue
 import time
+import traceback
 import clientstate
 import protocol
 import utils
@@ -43,15 +44,6 @@ class worker:
     def _worker_entrypoint(self):
         raise NotImplementedError
 
-class requests_queue:
-
-    def push(self, request):
-        pass
-
-    def pop(self):
-        pass
-
-
 class responses_queue:
 
     def push(self):
@@ -60,11 +52,10 @@ class responses_queue:
     def apply_response(self, response):
         pass
 
-
-
 class connection(worker):
 
     __DISCONNECT_TIMEOUT = 5.0
+    __MAX_RELIABLE_COMMANDS = 64
 
     def __init__(self, host, port, protocol = protocol_q3v68,
                  handler = events_handler, uinfo: userinfo = None, fps: int = 60):
@@ -81,7 +72,7 @@ class connection(worker):
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._lock = threading.Lock()
-        self._queue = queue.Queue()
+        self._queue = queue.Queue(maxsize = self.__MAX_RELIABLE_COMMANDS)
         # Open worker thread
         super().__init__()
 
@@ -130,7 +121,14 @@ class connection(worker):
             timeout_counter = 0
 
             with self._lock:
-                packet = self._protocol.handle_packet(raw.data)
+                try:
+                    packet = self._protocol.handle_packet(raw.data)
+                    if not packet: # defragmentation
+                        continue
+                except Exception:
+                    print(traceback.print_exc())
+                    continue
+
                 #TODO: apply response
 
                 # send client state in the end of the frame

@@ -3,9 +3,8 @@ import packets
 import utils
     
 class _protocol_base:
-    CONNECTION_LESS = -1
-    FRAGMENTED = 1<<31
-    MAX_RELIABLE_COMMANDS = 64
+    _CONNECTION_LESS = -1
+    _FRAGMENTED = 1<<31
 
     def __init__(self, version, evaluator: clientstate.evaluator) -> None:
         self._protocol_version = version
@@ -32,15 +31,15 @@ class _protocol_base:
         sequence = packet.read_int()
 
         # 1. Defragmentation
-        if sequence != self.CONNECTION_LESS and (sequence & self.FRAGMENTED) != 0:
+        if sequence != self._CONNECTION_LESS and (sequence & self._FRAGMENTED) != 0:
             # fragmented packet
-            sequence &= (0xFFFFFFFF & ~(self.FRAGMENTED))
+            sequence &= (0xFFFFFFFF & ~(self._FRAGMENTED))
             packet, size = self._defragmentation(self._gamestate.challenge, sequence, packet)
             if not packet:
                 return None
         
         # 2. Deserialization
-        if sequence == self.CONNECTION_LESS:
+        if sequence == self._CONNECTION_LESS:
             output = self._handle_connection_less_packet(packet)
         else:
             output = self._handle_connected_packet(sequence, packet, size)
@@ -48,14 +47,14 @@ class _protocol_base:
         if not output:
              return packets.packet_unknown(data)
 
-        # # 3. Evaluation (gamestate)
+        # 3. Evaluation (gamestate)
         self._evaluator(output)
 
         return output
 
     def _defragmentation(self, challenge, sequence, packet) -> bool:
-        if self.defragmentator.load_fragment(challenge, sequence, packet):
-            return self.defragmentator.get_packet()
+        if self._defragmentator.load_fragment(challenge, sequence, packet):
+            return self._defragmentator.get_packet()
         return None, None
 
     def _handle_connection_less_packet(self, packet):
@@ -121,7 +120,7 @@ class _defragmentator:
         return (fragment_length <  self._FRAGMENT_SIZE)
 
     def get_packet(self):
-        packet =  utils.reader(self.sequence.to_bytes(4, "little", signed=True) + self.packet)
+        packet =  utils.reader(utils.int_to_bytes(self.sequence) + self.packet)
         packet.oob = True
         packet.read_long()
         return packet, len(self.packet) 

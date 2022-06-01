@@ -1,5 +1,7 @@
-from msilib import sequence
 import clientstate
+
+# ========================
+#   Packets
 
 class packet_base:
     sequence = -1
@@ -8,7 +10,8 @@ class packet_unknown(packet_base):
     def __init__(self, packet) -> None:
         pass
 
-
+# ========================
+#   Parsers
 
 class parser_base:
     _command = None
