@@ -1,10 +1,9 @@
 import clientstate
 import packets
 import utils
-    
+import defines
+
 class _protocol_base:
-    _CONNECTION_LESS = -1
-    _FRAGMENTED = 1<<31
 
     def __init__(self, version, evaluator: clientstate.evaluator) -> None:
         self._protocol_version = version
@@ -30,27 +29,31 @@ class _protocol_base:
         packet.compression(False)
         sequence = packet.read_int()
 
-        # 1. Defragmentation
-        if sequence != self._CONNECTION_LESS and (sequence & self._FRAGMENTED) != 0:
-            # fragmented packet
-            sequence &= (0xFFFFFFFF & ~(self._FRAGMENTED))
-            packet, size = self._defragmentation(self._gamestate.challenge, sequence, packet)
-            if not packet:
-                return None
-        
-        # 2. Deserialization
-        if sequence == self._CONNECTION_LESS:
-            output = self._handle_connection_less_packet(packet)
-        else:
+        if utils.connection_sequence(sequence):
+            # 1. Defragmentation
+            if (sequence & defines.FRAGMENTED_PACKET) != 0:
+                # fragmented packet
+                sequence &= (0xFFFFFFFF & ~(defines.FRAGMENTED_PACKET))
+                packet, size = self._defragmentation(self._gamestate.challenge, sequence, packet)
+                if not packet:
+                    return None
+
+            # 2. Deserialization
             output = self._handle_connected_packet(sequence, packet, size)
+        else:
+            output = self._handle_connection_less_packet(packet)
         
         if not output:
-             return packets.packet_unknown(data)
+             return packets.server_packet(data)
 
         # 3. Evaluation (gamestate)
-        self._evaluator(output)
+        self._evaluator.execute(output)
 
         return output
+
+    def queue_command(self, command: str) -> int:
+        assert(self._gamestate.is_connected())
+        return self._evaluator.queue_command()
 
     def _defragmentation(self, challenge, sequence, packet) -> bool:
         if self._defragmentator.load_fragment(challenge, sequence, packet):

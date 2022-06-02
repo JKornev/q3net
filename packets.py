@@ -1,14 +1,13 @@
 import clientstate
 
 # ========================
-#   Packets
+#   Common packet
 
-class packet_base:
-    sequence = -1
-
-class packet_unknown(packet_base):
-    def __init__(self, packet) -> None:
-        pass
+class server_packet:
+    def __init__(self, data, command = None, sequence = -1) -> None:
+        self.sequence = sequence
+        self.command = command
+        self.data = data
 
 # ========================
 #   Parsers
@@ -17,7 +16,7 @@ class parser_base:
     _command = None
 
     def __init__(self, command = None) -> None:
-        _command = command
+        self._command = command
 
     def equal(self, command):
         return command == self._command
@@ -26,12 +25,11 @@ class parser_base:
         raise NotImplementedError
 
 class parser_unknown(parser_base):
-
     def equal(self, command):
         return True # any packet is unknown in the end of the check
 
     def parse(self, packet):
-        self._data = packet
+        return server_packet(packet, self._command) 
 
 class parser_print(parser_base):
     def __init__(self) -> None:
@@ -40,7 +38,7 @@ class parser_print(parser_base):
     def parse(self, packet):
         tokens = packet.split('\n', 1)
         assert(len(tokens) == 2)
-        return tokens[1].rstrip() #TODO: return print packet
+        return server_packet( tokens[1].rstrip(), self._command )  #TODO: return print packet
 
 class parse_status(parser_base):
     def __init__(self) -> None:
@@ -59,7 +57,7 @@ class parse_status(parser_base):
             assert(len(fields) == 3)
             players.append((int(fields[0]), int(fields[1]), fields[2].strip("\"")))
 
-        return (info, players) #TODO: return packet
+        return server_packet( (info, players), self._command)
 
 class parse_info(parser_base):
     def __init__(self) -> None:
@@ -68,7 +66,9 @@ class parse_info(parser_base):
     def parse(self, packet):
         lines = packet.splitlines()
         assert(len(lines) == 2)
-        return clientstate.userinfo().deserialize(lines[1]) #TODO: return packet
+        ui = clientstate.userinfo()
+        ui.deserialize(lines[1])
+        return server_packet(ui, self._command) 
 
 class parse_challenge(parser_base):
     def __init__(self) -> None:
@@ -90,11 +90,14 @@ class parse_challenge(parser_base):
         if count >= 4:
             protocol = int(tokens[3])
 
-        return (challenge, clientChallenge, protocol) #TODO: return packet
+        return server_packet( (challenge, clientChallenge, protocol), self._command )
 
 class parse_connect(parser_base):
     def __init__(self) -> None:
         super().__init__("connectResponse")
 
     def parse(self, packet):
-        raise NotImplementedError
+        tokens = packet.split()
+        count = len(tokens)
+        assert(count == 2)
+        return server_packet(int(tokens[1]), self._command)

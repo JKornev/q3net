@@ -1,5 +1,6 @@
 import socket
 import q3huff
+import defines
 
 # ========================
 #   Network
@@ -59,3 +60,9 @@ class reader:
     def _int(self, size, signed):
         return int.from_bytes(self._reader.read_data(size), "little", signed=signed)
  
+# ========================
+#   Misc
+
+def connection_sequence(sequence : int) -> bool:
+    assert(sequence >= defines.NO_CONNECTION_SEQUENCE) # seq can't be < -1
+    return sequence > defines.NO_CONNECTION_SEQUENCE

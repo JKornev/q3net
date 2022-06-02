@@ -1,11 +1,17 @@
 import enum
 
+NO_CONNECTION_SEQUENCE = -1
+
+FRAGMENTED_PACKET = 1<<31
+
+MAX_RELIABLE_COMMANDS = 64
+
 class configstr_t(enum.Enum):
     CS_SERVERINFO       = 0	# an info string with all the serverinfo cvars
     CS_SYSTEMINFO       = 1 # an info string for server system to client system configuration (timescale, etc)
 
 class connstate_t(enum.Enum):
-    CA_UNINITIALIZED    = 0
+    #CA_UNINITIALIZED    = 0
     CA_DISCONNECTED     = 1 # not talking to a server
    #CA_AUTHORIZING      = 2 # not used any more, was checking cd key 
     CA_CONNECTING       = 3 # sending request packets to the server
