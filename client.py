@@ -63,6 +63,7 @@ if __name__ == '__main__':
     print( c.request(q3net.get_info_request()) )
     print( c.request(q3net.get_status_request()) )
     c.connect()
+    time.sleep(11)
     c.terminate()
     
     pass

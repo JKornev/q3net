@@ -95,7 +95,17 @@ class _protocol_base:
         return None
 
     def client_frame(self):
-        raise NotImplementedError
+        # 4	sequence number
+        # 2	qport
+        # 4	serverid
+        # 4	acknowledged sequence number
+        # 4	clc.serverCommandSequence
+        # <optional reliable commands>
+        # 1	clc_move or clc_moveNoDelta
+        # 1	command count
+        # <count * usercmds>
+        #TODO: protocol 71
+        return self._evaluator.generate_client_frame()
 
 class _defragmentator:
     _FRAGMENT_SIZE = 1300

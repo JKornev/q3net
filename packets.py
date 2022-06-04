@@ -38,7 +38,7 @@ class parser_print(parser_base):
     def parse(self, packet):
         tokens = packet.split('\n', 1)
         assert(len(tokens) == 2)
-        return server_packet( tokens[1].rstrip(), self._command )  #TODO: return print packet
+        return server_packet( tokens[1].rstrip(), self._command ) #TODO: return print packet
 
 class parse_status(parser_base):
     def __init__(self) -> None:

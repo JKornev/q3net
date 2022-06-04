@@ -1,6 +1,7 @@
 import threading
 import defines
 import utils
+import q3huff
 
 class userinfo(dict): 
     def serialize(self):
@@ -107,7 +108,6 @@ class gamestate:
     def is_connected(self) -> bool:
         return self._state.value >= defines.connstate_t.CA_CONNECTED.value
 
-
 class events_handler:
 
     def event_connected(self, srv_id: int):
@@ -152,12 +152,58 @@ class evaluator(gamestate):
             if frm and self._state != frm:
                 raise Exception(f"Current state {self._state} != {frm}")
             self._state = to
+
+    def generate_client_frame(self):
+        # No connection - no need send frame
+        if not self.gamestate.is_connected():
+            return None
+
+        with self._lock:
+
+            server_id   = self._server_id
+            sequence    = self._message_seq
+            command_seq = self._command_seq
+
+            writer = q3huff.Writer()
+            writer.oob = False
+            
+            writer.write_long(server_id)    # serverid
+            #TODO: check is the sequence is valid, we put the same sequence in the bottom
+            writer.write_long(sequence)     # messageAcknowledge - usermove encryption
+            writer.write_long(command_seq)  # reliableAcknowledge - usermove\msg encryption
+
+            # commands
+            for i in range(self._reliable_ack + 1, self._reliable_seq + 1):
+                inx = i % 64
+                writer.write_byte(defines.clc_ops_e.clc_clientCommand.value)
+                writer.write_long(i)
+                writer.write_string(self._reliable_commands[inx])
+
+            # usermove
+            writer.write_byte(defines.clc_ops_e.clc_moveNoDelta.value)
+            writer.write_byte(1) # cmd count
+            if self._server_time == 0:
+                writer.write_bits(1, 1) # time delta bit
+                writer.write_bits(1, 8) # delta
+            else:
+                writer.write_bits(0, 1) # no time delta bit
+                writer.write_long(self._server_time + 100)
+            writer.write_bits(0, 1) # no changes
+
+            packet = b"" \
+                + sequence.to_bytes(4, "little", signed=True) \
+                + int(27960).to_bytes(2, "little", signed=False) \
+                + writer.data
+
+            self.__encrypt_packet(server_id, sequence, command_seq, packet)
+
+            return packet
     
     def _execute_connection_less(self, packet):
         self._handler.event_command(packet.sequence, packet.data)
 
         with self._lock:
-            
+
             # Step 1: getting challenge
             if self._state == defines.connstate_t.CA_CONNECTING:
                 if packet.command == "challengeResponse":
@@ -176,4 +222,24 @@ class evaluator(gamestate):
             # Step 3: make connection completed on first gamestate frame
             if self._state == defines.connstate_t.CA_CONNECTED:
                 self._state = defines.connstate_t.CA_ACTIVE
+            
+            pass
+
+    def __encrypt_packet(self, server_id, sequence, command_seq, packet):
+        CL_ENCODE_START = 18
+
+        index = 0
+        str = self._server_commands[command_seq % 64] + "\x00"
+        key = (self._challenge ^ sequence ^ server_id) & 0xFF
+        for i in range(CL_ENCODE_START, len(packet)):
+            if index >= len(str) or str[index] == '\x00':
+                index = 0
+
+            str_key = int.from_bytes( str[index].encode(), "little", signed=False ) & 0xFF
+            if str_key > 127 or str_key == 37: # 37 == '%', x > 127 - unprintable chars
+                str_key = 46 # 46 == '.'
+
+            key ^= (str_key << (i & 1)) & 0xFF
+            packet[i] = (packet[i] ^ key)
+            index += 1
 

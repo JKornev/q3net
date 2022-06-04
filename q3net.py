@@ -161,7 +161,8 @@ class connection(_worker):
             # Get challenge
             self._gs_evaluator.change_state(
                 frm = defines.connstate_t.CA_DISCONNECTED, 
-                to = defines.connstate_t.CA_CONNECTING)
+                to = defines.connstate_t.CA_CONNECTING
+            )
             
             request = challenge68_request() #TODO: challenge depends on protocol
             for i in range(attempts):
@@ -170,13 +171,9 @@ class connection(_worker):
                      break
             if not response:
                 raise Exception("Can't get a challenge")
-            #challenge = response.data[0]
+            challenge = response.data[0]
 
-            # Open connection
-            #self._gs_evaluator.change_state(
-            #    frm = defines.connstate_t.CA_CONNECTING, 
-            #    to = defines.connstate_t.CA_CHALLENGING)
-            
+            # Open connection            
             #TODO: verify protocol version
             userinfo = self.gamestate.userinfo
             userinfo["challenge"] = response.data[0]
@@ -186,13 +183,8 @@ class connection(_worker):
             if not response:
                 raise Exception("Can't receive connection response")
 
-            #if response.data != challenge:
-            #    raise Exception(f"Wrong challenge {challenge} != {response.data}")
-
-            # Complete connection
-            #self._gs_evaluator.change_state(
-            #    frm = defines.connstate_t.CA_CHALLENGING, 
-            #    to = defines.connstate_t.CA_CONNECTED)
+            if response.data != challenge:
+                raise Exception(f"Wrong challenge {challenge} != {response.data}")
 
         except Exception as exc:
             self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
