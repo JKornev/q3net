@@ -18,7 +18,7 @@ class connstate_t(enum.Enum):
     CA_CHALLENGING      = 4 # sending challenge packets to the server
     CA_CONNECTED        = 5 # netchan_t established, getting gamestate
    #CA_LOADING          = 6 # only during cgame initialization, never during main loop
-   #CA_PRIMED           = 7 # got gamestate, waiting for first frame
+    CA_PRIMED           = 7 # got gamestate, waiting for first frame
     CA_ACTIVE           = 8 # game views should be displayed
    #CA_CINEMATIC        = 9 # playing a cinematic or a static pic, not connected to a server
 

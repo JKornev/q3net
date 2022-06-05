@@ -57,12 +57,30 @@ class reader:
     def read_string(self):
         return self._reader.read_string()
 
+    def read_bigstring(self):
+        return self._reader.read_bigstring()
+    
+    def read_data(self, size):
+        return self._reader.read_data(size)
+
+    def read_bits(self, size):
+        return self._reader.read_bits(size)
+
+    def verify_eof(self):
+        eof = self._reader.read_byte()
+        if eof != -1:
+            raise Exception("Reading buffer isn't completed", eof)
+
     def _int(self, size, signed):
         return int.from_bytes(self._reader.read_data(size), "little", signed=signed)
+    
+    def _read(self, size):
+        #TODO: check reading out of buffer or delete it
+        pass
+
  
 # ========================
 #   Misc
 
 def connection_sequence(sequence : int) -> bool:
-    assert(sequence >= defines.NO_CONNECTION_SEQUENCE) # seq can't be < -1
-    return sequence > defines.NO_CONNECTION_SEQUENCE
+    return not (sequence == defines.NO_CONNECTION_SEQUENCE)

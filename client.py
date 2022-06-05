@@ -40,7 +40,7 @@ if __name__ == '__main__':
     #client()
     ui = q3net.userinfo()
     ui['client']         = 'Q3 1.32b'
-    ui['name']           = 'UnnamedPlayerA'
+    ui['name']           = 'UnnamedPlayer'
     ui['model']          = 'sarge'
     ui['headmodel']      = 'sarge'
     ui['team_model']     = 'james'
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     print( c.request(q3net.get_info_request()) )
     print( c.request(q3net.get_status_request()) )
     c.connect()
-    time.sleep(11)
+    time.sleep(60)
     c.terminate()
     
     pass

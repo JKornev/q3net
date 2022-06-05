@@ -123,6 +123,8 @@ class _requestor:
     def wait(self, timeout):
         # Now lets wait for response
         if not self._event.wait(timeout = timeout):
+            with self._mutex:
+                self._busy = False
             return None
 
         # Unlock busy state and return results
@@ -131,7 +133,7 @@ class _requestor:
             return self._response
 
 class connection(_worker):
-    __DISCONNECT_TIMEOUT = 5.0
+    __DISCONNECT_TIMEOUT = 50.0
     __REQUEST_TIMEOUT = 5.0
 
     def __init__(self, host, port, protocol = protocol_q3v68,
@@ -145,7 +147,7 @@ class connection(_worker):
         self._port = port
         self._transport = utils.udp_transport(host, port, self._frame_timeout)
         # Protocol
-        self._gs_evaluator = clientstate.evaluator(handler, uinfo)
+        self._gs_evaluator = clientstate.evaluator(handler, uinfo, host, port)
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._request_lock = threading.Lock()
@@ -163,8 +165,13 @@ class connection(_worker):
                 frm = defines.connstate_t.CA_DISCONNECTED, 
                 to = defines.connstate_t.CA_CONNECTING
             )
-            
-            request = challenge68_request() #TODO: challenge depends on protocol
+
+            #TODO: instead of such check a _protocol might generate request by its own
+            if self._protocol.protocol == 71:
+                request = challenge71_request()
+            else:
+                request = challenge68_request()
+
             for i in range(attempts):
                 response = self.request(request)
                 if response:
@@ -216,6 +223,8 @@ class connection(_worker):
             else:
                 # Send directly if it's a connection-less command
                 self._transport.send( utils.int_to_bytes(defines.NO_CONNECTION_SEQUENCE) + command.encode() )
+                seqence = None
+            return seqence
 
     @property
     def gamestate(self):
@@ -235,7 +244,7 @@ class connection(_worker):
                 if self.gamestate.is_connected():
                     if timeout_counter > timeout_max:
                         #TODO: force gamestate to disconnect
-                        break
+                        return
                     
                     with self._request_lock:
                         self._transport.send( self._protocol.client_frame() )

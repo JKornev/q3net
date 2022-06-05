@@ -39,7 +39,7 @@ class _protocol_base:
                     return None
 
             # 2. Deserialization
-            output = self._handle_connected_packet(sequence, packet, size)
+            output = self._handle_connected_packet(sequence, packet, size - 4)
         else:
             output = self._handle_connection_less_packet(packet)
         
@@ -71,39 +71,22 @@ class _protocol_base:
         return None
 
     def _handle_connected_packet(self, sequence, packet, size):
-        # assert(size > 4)
+        if size < 4:
+            return None
         
-        # if self.gamestate.sequence + 1 > sequence  : #> self.gamestate.sequence + 100
-        #     #print("[proto] packet dropped, seq:%d != gs.seq:%d" % (sequence, self.gamestate.sequence))
-        #     return None
+        if self._gamestate.message_seq + 1 > sequence:
+             return None
         
-        # #raw = self.__decrypt_packet( sequence, packet.read_data(size - 4) )
-        # raw = self.__decrypt_packet( sequence, packet.read_data(size) )
+        raw = self._evaluator.decrypt_server_frame( sequence, packet, size )
+        if not raw:
+            return None
 
-        # # Decode tail
-        # tail = q3huff.Reader(raw)
-        # tail.oob = False
-        # self.gamestate.sequence = sequence
-        # ack = tail.read_long()
-        # if ack != self.gamestate.reliable_ack:
-        #     pass
-        # self.gamestate.reliable_ack = ack
-
-        # q3packet = packet_q3_frame()
-        # q3packet.parse(tail)
-        # return q3packet
-        return None
+        parser = packets.parse_server_frame()
+        output = parser.parse(sequence, raw)
+        #raw.verify_eof() #TODO: uncomment when packets.parse_server_frame() is ready
+        return output
 
     def client_frame(self):
-        # 4	sequence number
-        # 2	qport
-        # 4	serverid
-        # 4	acknowledged sequence number
-        # 4	clc.serverCommandSequence
-        # <optional reliable commands>
-        # 1	clc_move or clc_moveNoDelta
-        # 1	command count
-        # <count * usercmds>
         #TODO: protocol 71
         return self._evaluator.generate_client_frame()
 
@@ -133,10 +116,11 @@ class _defragmentator:
         return (fragment_length <  self._FRAGMENT_SIZE)
 
     def get_packet(self):
-        packet =  utils.reader(utils.int_to_bytes(self.sequence) + self.packet)
-        packet.oob = True
-        packet.read_long()
-        return packet, len(self.packet) 
+        data = utils.int_to_bytes(self.sequence) + self.packet
+        packet =  utils.reader(data)
+        packet.compression(False)
+        packet.read_uint()
+        return packet, len(data)
 
 class q3v68(_protocol_base):
     def __init__(self, evaluator: clientstate.evaluator) -> None:
