@@ -109,9 +109,12 @@ class parse_connect(parser_base):
 
     def parse(self, packet):
         tokens = packet.split()
+
         count = len(tokens)
-        assert(count == 2)
-        return server_packet(int(tokens[1]), self._command)
+        if count > 1:
+            return server_packet(int(tokens[1]), self._command)
+        else:
+            return server_packet(None, self._command)
 
 # ========================
 #   Server frame parser

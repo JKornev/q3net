@@ -107,7 +107,7 @@ class _requestor:
 
     def try_complete(self, response: packets.server_packet, gamestate):
         with self._mutex:
-            if not self._busy:
+            if self._busy == False:
                 return
 
             if not self._request.require_connection and utils.connection_sequence(response.sequence):
@@ -179,7 +179,7 @@ class connection(_worker):
                 request = challenge68_request()
 
             for i in range(attempts):
-                response = self.request(request)
+                response = self.request(request, timeout = 1.0)
                 if response:
                      break
             if not response:
@@ -196,7 +196,7 @@ class connection(_worker):
             if not response:
                 raise Exception("Can't receive connection response")
 
-            if response.data != challenge:
+            if response.data and response.data != challenge:
                 raise Exception(f"Wrong challenge {challenge} != {response.data}")
 
         except Exception as exc:
@@ -210,7 +210,7 @@ class connection(_worker):
     def terminate(self):
         self._terminate()
 
-    def request(self, request: command_request) -> server_packet:
+    def request(self, request: command_request, timeout = __REQUEST_TIMEOUT) -> server_packet:
         with self._request_lock:
             if request.require_connection:
                 seqence = self._protocol.queue_command(request.req_command)
@@ -220,7 +220,7 @@ class connection(_worker):
                 
             self._requestor.push(request, seqence)
 
-        return self._requestor.wait(self.__REQUEST_TIMEOUT)
+        return self._requestor.wait(timeout)
 
     def send(self, command: str, force_connless = False):
         with self._request_lock:

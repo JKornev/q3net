@@ -242,7 +242,8 @@ class evaluator(gamestate):
     
     def _execute_connection_less(self, packet):
         # Notify event handler
-        self._handler.event_command(packet.sequence, packet.data)
+        if packet.data:
+            self._handler.event_command(packet.sequence, packet.data)
 
         with self._lock:
             # Step 1: getting challenge
@@ -253,7 +254,7 @@ class evaluator(gamestate):
 
             # Step 2: connection approval
             if self._state == defines.connstate_t.CA_CHALLENGING:
-                if packet.command == "connectResponse" and self._challenge == packet.data:
+                if packet.command == "connectResponse" and (not packet.data or self._challenge == packet.data):
                     self._state = defines.connstate_t.CA_CONNECTED
 
     def _execute_connected(self, packet):
