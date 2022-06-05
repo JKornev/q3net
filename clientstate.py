@@ -123,7 +123,7 @@ class gamestate:
 
 class events_handler:
 
-    def event_connected(self, srv_id: int):
+    def event_connected(self, host, port, srv_id: int):
         pass # stub
 
     def event_disconnected(self, reason: str):
@@ -164,6 +164,10 @@ class evaluator(gamestate):
         with self._lock:
             if frm and self._state != frm:
                 raise Exception(f"Current state {self._state} != {frm}")
+
+            if to == defines.connstate_t.CA_DISCONNECTED and self._state == defines.connstate_t.CA_ACTIVE:
+                self._handler.event_disconnected("")
+
             self._state = to
 
     def generate_client_frame(self):
@@ -234,9 +238,11 @@ class evaluator(gamestate):
             tail.compression(True)
             self._message_seq = sequence
             ack = tail.read_uint()
-            if ack != self._reliable_ack:
-                pass#TODO: wtf?
             self._reliable_ack = ack
+
+            #Note: not sure why it works this way but the hack is implemented in an engine source
+            if self._reliable_ack < self._reliable_seq - defines.MAX_RELIABLE_COMMANDS:
+                self._reliable_ack = self._reliable_seq
 
             return tail
     
@@ -275,7 +281,7 @@ class evaluator(gamestate):
                 # Step 4: make connection completed on the first gamestate frame
                 if self._state == defines.connstate_t.CA_PRIMED:
                     self._state = defines.connstate_t.CA_ACTIVE
-                    self._handler.event_connected(self._server_id)
+                    self._handler.event_connected(self._server_host, self._server_port, self._server_id)
 
             for inx, cfg in cfgstr.items():
                 self._handler.event_configstring(inx, cfg)

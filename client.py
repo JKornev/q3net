@@ -3,8 +3,8 @@ import q3net
 
 class handler(q3net.events_handler):
 
-    def event_connected(self, srv_id: int):
-        print(f"Connected to {srv_id}")
+    def event_connected(self, host, port, srv_id: int):
+        print(f"Connected to {host}:{port} id:{srv_id}")
 
     def event_disconnected(self, reason: str):
         print(f"Disconnected to {reason}")
@@ -15,11 +15,10 @@ class handler(q3net.events_handler):
     def event_command(self, seq: int, cmd: str):
         print(f"Command {seq} : {cmd}")
 
-    #def event_configstring(self, inx: int, txt: str):
-    #    print(f"ConfigString {inx} : {txt}")
+    def event_configstring(self, inx: int, txt: str):
+        print(f"ConfigString {inx} : {txt}")
 
 def client():
-    #connection = q3net.connection("meat.q3msk.ru", 7700, handler=handler)
     connection = q3net.connection("localhost", 27960, handler=handler)
     assert( connection.request(q3net.get_status_request())  != None )
     assert( connection.request(q3net.get_info_request())    != None )
@@ -38,8 +37,8 @@ def client():
     connection.terminate()
 
 if __name__ == '__main__':
-    client()
-    '''
+    #client()
+    
     ui = q3net.userinfo()
     ui['client']         = 'Q3 1.32b'
     ui['name']           = 'UnnamedPlayer'
@@ -58,15 +57,25 @@ if __name__ == '__main__':
     ui['cl_timeNudge']   = 0
     ui['cl_anonymous']   = 0
 
-    c = q3net.connection("localhost", 27960, uinfo=ui, handler=handler)
+    c = q3net.connection("q3.playground.ru", 27967, uinfo=ui, handler=handler)
     #time.sleep(1)
     c.send("getinfo")
     time.sleep(1)
     print( c.request(q3net.get_info_request()) )
     print( c.request(q3net.get_status_request()) )
     c.connect()
-    time.sleep(1)
-    c.send("say hi medved!")
+    time.sleep(5)
+    for i in range(20):
+        #time.sleep(1)
+        #r = c.request(q3net.say_request(":)"))
+        #print(f"say {r.data}")
+        r = c.send("hi")
+        print(f"say {r}")
+        
+    time.sleep(3.0)
+    c.request(q3net.custom_request("players"))
+
+    time.sleep(1.0)
     print("!!!! disconnecting")
     c.disconnect()
     print("!!!! terminating")
@@ -75,5 +84,5 @@ if __name__ == '__main__':
     #print(ui.serialize())
     #ui.deserialize(ui.serialize())
     #print(ui)
-    '''
+    
 

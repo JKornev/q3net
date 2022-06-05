@@ -82,7 +82,7 @@ class _protocol_base:
 
         parser = packets.parse_server_frame()
         output = parser.parse(sequence, raw)
-        #raw.verify_eof() #TODO: uncomment when packets.parse_server_frame() is ready
+        raw.verify_eof() #TODO: uncomment when packets.parse_server_frame() is ready
         return output
 
     def client_frame(self):

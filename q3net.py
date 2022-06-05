@@ -57,6 +57,16 @@ class disconnect_request(command_request):
     def __init__(self):
         super().__init__("disconnect", None, require_connection=True)
 
+class say_request(command_request):
+    def __init__(self, message):
+        #TODO: filter
+        super().__init__(f"say \"{message}\"", None, require_connection=True)
+
+class custom_request(command_request):
+    def __init__(self, message):
+        #TODO: filter
+        super().__init__(message, None, require_connection=True)
+
 # ========================
 #   Quake3 NET core
 
