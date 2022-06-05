@@ -1,24 +1,6 @@
 import time
 import q3net
 
-def client():
-    connection = q3net.connection("localhost", 27960)
-    assert( connection.send_command(q3net.get_status_request())  != None )
-    assert( connection.send_command(q3net.get_info_request())    != None )
-
-    connection.connect()
-
-    while True:
-        line = input(">")
-        if line == "exit":
-            break
-        connection.send_command(q3net.custom_request(line))
-
-    connection.disconnect()
-    print("buy")
-    time.sleep(5)
-    connection.terminate()
-
 class handler(q3net.events_handler):
 
     def event_connected(self, srv_id: int):
@@ -33,11 +15,31 @@ class handler(q3net.events_handler):
     def event_command(self, seq: int, cmd: str):
         print(f"Command {seq} : {cmd}")
 
-    def event_configstring(self, inx: int, txt: str):
-        print(f"ConfigString {inx} : {txt}")
+    #def event_configstring(self, inx: int, txt: str):
+    #    print(f"ConfigString {inx} : {txt}")
+
+def client():
+    #connection = q3net.connection("meat.q3msk.ru", 7700, handler=handler)
+    connection = q3net.connection("localhost", 27960, handler=handler)
+    assert( connection.request(q3net.get_status_request())  != None )
+    assert( connection.request(q3net.get_info_request())    != None )
+
+    connection.connect()
+
+    while True:
+        cmd = input(">")
+        if cmd == "exit":
+            break
+        connection.send(cmd)
+
+    connection.disconnect()
+    print("buy")
+    #time.sleep(5)
+    connection.terminate()
 
 if __name__ == '__main__':
-    #client()
+    client()
+    '''
     ui = q3net.userinfo()
     ui['client']         = 'Q3 1.32b'
     ui['name']           = 'UnnamedPlayer'
@@ -63,11 +65,15 @@ if __name__ == '__main__':
     print( c.request(q3net.get_info_request()) )
     print( c.request(q3net.get_status_request()) )
     c.connect()
-    time.sleep(60)
+    time.sleep(1)
+    c.send("say hi medved!")
+    print("!!!! disconnecting")
+    c.disconnect()
+    print("!!!! terminating")
     c.terminate()
-    
-    pass
+    print("!!!! done")
     #print(ui.serialize())
     #ui.deserialize(ui.serialize())
     #print(ui)
+    '''
 

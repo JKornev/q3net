@@ -27,7 +27,7 @@ server_packet = packets.server_packet
 #   Quake3 requests
 
 class command_request:
-    def __init__(self, command : bytes, response = None, require_connection = False) -> None:
+    def __init__(self, command, response = None, require_connection = False) -> None:
         self.req_command = command
         self.resp_command = response
         self.require_connection = require_connection
@@ -53,6 +53,10 @@ class connection_request(command_request):
     def __init__(self, userinfo):
         super().__init__(b"connect " + q3huff.compress(userinfo.serialize().encode()), "connectResponse")
 
+class disconnect_request(command_request):
+    def __init__(self):
+        super().__init__("disconnect", None, require_connection=True)
+
 # ========================
 #   Quake3 NET core
 
@@ -64,7 +68,7 @@ class _worker:
         self.__worker.start()
 
     def __del__(self):
-        self.terminate()
+        self._terminate()
 
     def _terminate(self):
         self.__active = False
@@ -112,7 +116,9 @@ class _requestor:
             if self._request.require_connection:
                 if not utils.connection_sequence(response.sequence):
                     return
-                
+                if self._sequence > gamestate.reliable_ack:
+                    return
+                    
             if self._request.resp_command != response.command:
                 return
                 
@@ -198,7 +204,8 @@ class connection(_worker):
             raise exc
 
     def disconnect(self):
-        raise NotImplementedError
+        if not self.request(disconnect_request()):
+            self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
 
     def terminate(self):
         self._terminate()
@@ -243,7 +250,7 @@ class connection(_worker):
                 timeout_counter += 1
                 if self.gamestate.is_connected():
                     if timeout_counter > timeout_max:
-                        #TODO: force gamestate to disconnect
+                        self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
                         return
                     
                     with self._request_lock:

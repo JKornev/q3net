@@ -52,8 +52,7 @@ class _protocol_base:
         return output
 
     def queue_command(self, command: str) -> int:
-        assert(self._gamestate.is_connected())
-        return self._evaluator.queue_command()
+        return self._evaluator.queue_command(command)
 
     def _defragmentation(self, challenge, sequence, packet) -> bool:
         if self._defragmentator.load_fragment(challenge, sequence, packet):

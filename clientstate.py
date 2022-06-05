@@ -116,6 +116,7 @@ class gamestate:
         ui['cl_maxpackets']  = 125
         ui['cl_timeNudge']   = 0
         ui['cl_anonymous']   = 0
+        return ui
 
     def is_connected(self) -> bool:
         return self._state.value >= defines.connstate_t.CA_CONNECTED.value
@@ -280,12 +281,23 @@ class evaluator(gamestate):
             
             # Load commands
             prev = -1
+            disconnect = False
+            disconnect_reason = None
             for seq, txt in packet.commands:
                 if seq > self._command_seq:
                     assert(prev == -1 or prev + 1 == seq)
                     self._handler.event_command(seq, txt)
                     self._server_commands[seq % 64] = txt
                     prev = seq
+
+                    # Step 5: disconnect when server kicks us
+                    if txt.startswith("disconnect"):
+                        tokens = txt.split(maxsplit=1)
+                        if len(tokens) > 1:
+                            disconnect_reason = tokens[1]
+                        else:
+                            disconnect_reason = "no reason"
+                        disconnect = True
 
             if packet.command_seq > self._command_seq:
                  #assert(packet.command_seq == self.gamestate.command_seq + 1)
@@ -305,6 +317,10 @@ class evaluator(gamestate):
                     #    self.gamestate.checksum_feed
                     #))
                     pass
+            
+            if disconnect:
+                self._handler.event_disconnected(disconnect_reason)
+                self._state = defines.connstate_t.CA_DISCONNECTED
 
     def __encrypt_packet(self, server_id, sequence, command_seq, packet):
         CL_ENCODE_START = 18
