@@ -66,11 +66,6 @@ class reader:
     def read_bits(self, size):
         return self._reader.read_bits(size)
 
-    def verify_eof(self):
-        eof = self._reader.read_byte()
-        if eof != -1:
-            raise Exception("Reading buffer isn't completed", eof)
-
     def _int(self, size, signed):
         return int.from_bytes(self._reader.read_data(size), "little", signed=signed)
     
