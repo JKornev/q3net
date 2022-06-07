@@ -117,7 +117,8 @@ class _requestor:
 
     def try_complete(self, response: packets.server_packet, gamestate):
         with self._mutex:
-            if self._busy == False:
+
+            if not self._busy:
                 return
 
             if not self._request.require_connection and utils.connection_sequence(response.sequence):
@@ -134,6 +135,7 @@ class _requestor:
                 
             self._request = None
             self._response = response
+            self._busy = False
             self._event.set()
 
     def wait(self, timeout):
@@ -143,10 +145,7 @@ class _requestor:
                 self._busy = False
             return None
 
-        # Unlock busy state and return results
-        with self._mutex:
-            self._busy = False
-            return self._response
+        return self._response
 
 class connection(_worker):
     __DISCONNECT_TIMEOUT = 50.0
