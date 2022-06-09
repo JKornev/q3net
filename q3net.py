@@ -162,9 +162,10 @@ class connection(_worker):
         # Network
         self._host = host
         self._port = port
-        self._transport = utils.udp_transport(host, port, self._frame_timeout)
+        self._qport = random.randint(0, 0xFFFF)
+        self._transport = utils.udp_transport(host, self._port, self._frame_timeout)
         # Protocol
-        self._gs_evaluator = clientstate.evaluator(handler, host, port)
+        self._gs_evaluator = clientstate.evaluator(handler, self._host, self._port, self._qport)
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._request_lock = threading.Lock()
@@ -204,7 +205,7 @@ class connection(_worker):
             #TODO: verify protocol version
             userinfo = self.gamestate.userinfo
             userinfo["challenge"] = response.data[0]
-            userinfo["qport"] = self._port + 1
+            userinfo["qport"] = self._qport
             userinfo["protocol"] = self._protocol.protocol
             response = self.request(connection_request(userinfo))
             if not response:

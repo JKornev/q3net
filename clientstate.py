@@ -21,10 +21,11 @@ class userinfo(dict):
 class gamestate:
     _lock = threading.Lock()
 
-    def __init__(self, host, port) -> None:
+    def __init__(self, host, port, qport) -> None:
         self._state         = defines.connstate_t.CA_DISCONNECTED
         self._server_host   = host
         self._server_port   = port
+        self._qport         = qport
         self._userinfo      = self.__default_userinfo()
         self._reset_state()
 
@@ -101,6 +102,11 @@ class gamestate:
         with self._lock:
             return self._server_port
 
+    @property
+    def qport(self):
+        with self._lock:
+            return self._qport
+
     def __default_userinfo(self):
         ui = userinfo()
         ui['client']         = 'Q3 1.32b'
@@ -142,8 +148,8 @@ class events_handler:
         pass # stub
 
 class evaluator(gamestate):
-    def __init__(self, handler: events_handler, host, port) -> None:
-        super().__init__(host, port)
+    def __init__(self, handler: events_handler, host, port, qport) -> None:
+        super().__init__(host, port, qport)
         self._handler = handler()
 
     @property
@@ -226,7 +232,7 @@ class evaluator(gamestate):
 
             packet = bytearray(b"" \
                 + sequence.to_bytes(4, "little", signed=True) \
-                + self._server_port.to_bytes(2, "little", signed=False) \
+                + self._qport.to_bytes(2, "little", signed=False) \
                 + writer.data)
 
             self.__encrypt_packet(server_id, sequence, command_seq, packet)
