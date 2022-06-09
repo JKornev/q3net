@@ -21,22 +21,25 @@ class userinfo(dict):
 class gamestate:
     _lock = threading.Lock()
 
-    def __init__(self, host, port, uinfo: userinfo = None) -> None:
+    def __init__(self, host, port) -> None:
         self._state         = defines.connstate_t.CA_DISCONNECTED
+        self._server_host   = host
+        self._server_port   = port
+        self._userinfo      = self.__default_userinfo()
+        self._reset_state()
+
+    def _reset_state(self):
         self._challenge     = 0 # proto 71
         self._message_seq   = 0 # clc.serverMessageSequence
         self._command_seq   = 0 # clc.serverCommandSequence
         self._server_id     = 0 # used
         self._server_time   = 0 # ???
-        self._userinfo      = self.__default_userinfo() if not uinfo else uinfo
         self._reliable_ack  = 0 # clc.reliableAcknowledge
         self._reliable_seq  = 0 # clc.reliableSequence
         self._pure          = False
         self._checksum_feed = 0
         self._reliable_commands = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
         self._server_commands   = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
-        self._server_host   = host
-        self._server_port   = port
 
     @property
     def conn_state(self):
@@ -139,8 +142,8 @@ class events_handler:
         pass # stub
 
 class evaluator(gamestate):
-    def __init__(self, handler: events_handler, uinfo: userinfo, host, port) -> None:
-        super().__init__(host, port, uinfo)
+    def __init__(self, handler: events_handler, host, port) -> None:
+        super().__init__(host, port)
         self._handler = handler()
 
     @property
@@ -169,6 +172,11 @@ class evaluator(gamestate):
                 self._handler.event_disconnected("")
 
             self._state = to
+
+    def set_player_profile(self, userinfo):
+        with self._lock:
+            self._userinfo.clear()
+            self._userinfo = userinfo
 
     def generate_client_frame(self):
         # No connection - no need send frame
@@ -255,6 +263,7 @@ class evaluator(gamestate):
             # Step 1: getting challenge
             if self._state == defines.connstate_t.CA_CONNECTING:
                 if packet.command == "challengeResponse":
+                    self._reset_state()
                     self._challenge = packet.data[0]
                     self._state = defines.connstate_t.CA_CHALLENGING
 
@@ -263,8 +272,13 @@ class evaluator(gamestate):
                 if packet.command == "connectResponse" and (not packet.data or self._challenge == packet.data):
                     self._state = defines.connstate_t.CA_CONNECTED
 
+
     def _execute_connected(self, packet):
         with self._lock:
+            # No need handle connected packets without connection
+            if self._state == defines.connstate_t.CA_DISCONNECTED:
+                return
+
             # Step 3: connection established
             if self._state == defines.connstate_t.CA_CONNECTED:
                 self._state = defines.connstate_t.CA_PRIMED
@@ -320,7 +334,7 @@ class evaluator(gamestate):
                     #self.queue_command("cp {} {} {} @ {}".format(
                     #    self.gamestate.server_id,
                     #    -680722472, #osp cgame checksum
-                    #    -226345602, #osp cgame checksum
+                    #    -226345602, #osp ui checksum
                     #    self.gamestate.checksum_feed
                     #))
                     pass

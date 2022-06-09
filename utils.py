@@ -72,7 +72,6 @@ class reader:
     def _read(self, size):
         #TODO: check reading out of buffer or delete it
         pass
-
  
 # ========================
 #   Misc

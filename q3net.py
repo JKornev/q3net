@@ -1,6 +1,7 @@
 import threading
 import random
 import traceback
+import time
 import clientstate
 import protocol
 import packets
@@ -81,7 +82,8 @@ class _worker:
         self._terminate()
 
     def _terminate(self):
-        self.__active = False
+        with self.__lock:
+            self.__active = False
         self.__worker.join()
 
     @property
@@ -148,11 +150,11 @@ class _requestor:
         return self._response
 
 class connection(_worker):
-    __DISCONNECT_TIMEOUT = 50.0
-    __REQUEST_TIMEOUT = 5.0
+    __DISCONNECT_TIMEOUT = 5.0
+    __REQUEST_TIMEOUT = 3.0
 
     def __init__(self, host, port, protocol = protocol_q3v68,
-                 handler = events_handler, uinfo: userinfo = None, fps: int = 60):
+                 handler = events_handler, fps: int = 60):
         assert(1 <= fps <= 125)
         # FPS
         self._fps = fps
@@ -162,7 +164,7 @@ class connection(_worker):
         self._port = port
         self._transport = utils.udp_transport(host, port, self._frame_timeout)
         # Protocol
-        self._gs_evaluator = clientstate.evaluator(handler, uinfo, host, port)
+        self._gs_evaluator = clientstate.evaluator(handler, host, port)
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._request_lock = threading.Lock()
@@ -170,7 +172,7 @@ class connection(_worker):
         # Open worker thread
         super().__init__()
 
-    def connect(self, attempts=10):
+    def connect(self, userinfo: clientstate.userinfo = None, attempts = 10):
         if self.gamestate.is_connected():
             raise Exception("Already connected")
         
@@ -195,11 +197,14 @@ class connection(_worker):
                 raise Exception("Can't get a challenge")
             challenge = response.data[0]
 
-            # Open connection            
+            # Open connection
+            if userinfo:
+                self._gs_evaluator.set_player_profile(userinfo)
+
             #TODO: verify protocol version
             userinfo = self.gamestate.userinfo
             userinfo["challenge"] = response.data[0]
-            userinfo["qport"] = self._port
+            userinfo["qport"] = self._port + 1
             userinfo["protocol"] = self._protocol.protocol
             response = self.request(connection_request(userinfo))
             if not response:
@@ -259,12 +264,17 @@ class connection(_worker):
                 timeout_counter += 1
                 if self.gamestate.is_connected():
                     if timeout_counter > timeout_max:
+                        #TODO: notify somehow main thread
                         self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
-                        return
+                        continue
                     
                     with self._request_lock:
                         self._transport.send( self._protocol.client_frame() )
                 # go to a next frame
+                continue
+            except ConnectionError:
+                self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
+                time.sleep(0.1)
                 continue
             
             # reset timeout counter because we got a packet from the server
@@ -285,3 +295,5 @@ class connection(_worker):
                 # send client state in the end of the frame
                 if self.gamestate.is_connected():
                     self._transport.send( self._protocol.client_frame() )
+        
+        print("EXIT WORK END")#TODO: delete me
