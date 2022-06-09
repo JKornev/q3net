@@ -325,6 +325,10 @@ class evaluator(gamestate):
                         else:
                             disconnect_reason = "no reason"
                         disconnect = True
+                    elif txt.startswith("cs "):
+                        tokens = txt.split(maxsplit=2)
+                        if len(tokens) >= 3:
+                            self._handler.event_configstring(int(tokens[1]), tokens[2])
 
             if packet.command_seq > self._command_seq:
                  #assert(packet.command_seq == self.gamestate.command_seq + 1)
