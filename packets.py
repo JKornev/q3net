@@ -128,7 +128,7 @@ class parse_server_frame(parser_base):
 
         while True:
             cmd = packet.read_uchar()
-
+            
             if cmd == defines.svc_ops_e.svc_nop.value:
                 continue
             elif cmd == defines.svc_ops_e.svc_EOF.value or cmd == -1:
@@ -155,6 +155,8 @@ class parse_server_frame(parser_base):
             elif cmd == defines.svc_ops_e.svc_download.value:
                 break
             elif cmd == defines.svc_ops_e.svc_snapshot.value:
+                #TODO: sometimes snapshot parsing breaks packet
+                #      Reproduction: connect to a server and make kick from the server
                 frame.snapshot = server_snapshot(packet)
             elif cmd == defines.svc_ops_e.svc_voipSpeex.value:
                 assert(False)

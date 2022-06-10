@@ -1,9 +1,11 @@
 import threading
+import random
+import collections
 import defines
 import utils
 import q3huff
 
-class userinfo(dict): 
+class userinfo(collections.OrderedDict): 
     def serialize(self):
         output = "\""
         for key, value in self.items():
@@ -18,15 +20,13 @@ class userinfo(dict):
         for key in it:
             self.update( {key : next(it)} )
 
-class gamestate:
-    _lock = threading.Lock()
-
-    def __init__(self, host, port, qport) -> None:
+class _gamestate_base:
+    def __init__(self, host, port) -> None:
         self._state         = defines.connstate_t.CA_DISCONNECTED
         self._server_host   = host
         self._server_port   = port
-        self._qport         = qport
         self._userinfo      = self.__default_userinfo()
+        self._qport         = random.randint(0, 0xFFFF)
         self._reset_state()
 
     def _reset_state(self):
@@ -41,6 +41,29 @@ class gamestate:
         self._checksum_feed = 0
         self._reliable_commands = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
         self._server_commands   = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
+
+    def __default_userinfo(self):
+        ui = userinfo()
+        ui['client']         = 'Q3 1.32b'
+        ui['name']           = 'UnnamedPlayer'
+        ui['model']          = 'sarge'
+        ui['headmodel']      = 'sarge'
+        ui['team_model']     = 'james'
+        ui['team_headmodel'] = 'james'
+        ui['handicap']       = 100
+        ui['teamtask']       = 0
+        ui['sex']            = 'male'
+        ui['color1']         = 1
+        ui['color2']         = 2
+        ui['rate']           = 25000
+        ui['snaps']          = 40
+        ui['cl_maxpackets']  = 125
+        ui['cl_timeNudge']   = 0
+        ui['cl_anonymous']   = 0
+        return ui
+
+class gamestate(_gamestate_base):
+    _lock = threading.RLock()
 
     @property
     def conn_state(self):
@@ -107,28 +130,9 @@ class gamestate:
         with self._lock:
             return self._qport
 
-    def __default_userinfo(self):
-        ui = userinfo()
-        ui['client']         = 'Q3 1.32b'
-        ui['name']           = 'UnnamedPlayer'
-        ui['model']          = 'sarge'
-        ui['headmodel']      = 'sarge'
-        ui['team_model']     = 'james'
-        ui['team_headmodel'] = 'james'
-        ui['handicap']       = 100
-        ui['teamtask']       = 0
-        ui['sex']            = 'male'
-        ui['color1']         = 1
-        ui['color2']         = 2
-        ui['rate']           = 25000
-        ui['snaps']          = 40
-        ui['cl_maxpackets']  = 125
-        ui['cl_timeNudge']   = 0
-        ui['cl_anonymous']   = 0
-        return ui
-
     def is_connected(self) -> bool:
-        return self._state.value >= defines.connstate_t.CA_CONNECTED.value
+        with self._lock:
+            return self._state.value >= defines.connstate_t.CA_CONNECTED.value
 
 class events_handler:
 
@@ -148,15 +152,21 @@ class events_handler:
         pass # stub
 
 class evaluator(gamestate):
-    def __init__(self, handler: events_handler, host, port, qport) -> None:
-        super().__init__(host, port, qport)
+    def __init__(self, handler: events_handler, host, port) -> None:
+        super().__init__(host, port)
         self._handler = handler()
 
     @property
     def gamestate(self) -> gamestate:
         return self
 
+    def disconnect(self):
+        self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
+
     def execute(self, packet):
+        # Notify about a new packet
+        self._handler.event_packet(packet)
+
         if utils.connection_sequence(packet.sequence):
             self._execute_connected(packet)
         else:

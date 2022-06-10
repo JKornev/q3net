@@ -63,6 +63,11 @@ class say_request(command_request):
         #TODO: filter
         super().__init__(f"say \"{message}\"", None, require_connection=True)
 
+class sayteam_request(command_request):
+    def __init__(self, message):
+        #TODO: filter
+        super().__init__(f"say_team \"{message}\"", None, require_connection=True)
+
 class custom_request(command_request):
     def __init__(self, message):
         #TODO: filter
@@ -162,10 +167,9 @@ class connection(_worker):
         # Network
         self._host = host
         self._port = port
-        self._qport = random.randint(0, 0xFFFF)
         self._transport = utils.udp_transport(host, self._port, self._frame_timeout)
         # Protocol
-        self._gs_evaluator = clientstate.evaluator(handler, self._host, self._port, self._qport)
+        self._gs_evaluator = clientstate.evaluator(handler, self._host, self._port)
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._request_lock = threading.Lock()
@@ -205,7 +209,7 @@ class connection(_worker):
             #TODO: verify protocol version
             userinfo = self.gamestate.userinfo
             userinfo["challenge"] = response.data[0]
-            userinfo["qport"] = self._qport
+            userinfo["qport"] = self.gamestate.qport
             userinfo["protocol"] = self._protocol.protocol
             response = self.request(connection_request(userinfo))
             if not response:
@@ -215,12 +219,12 @@ class connection(_worker):
                 raise Exception(f"Wrong challenge {challenge} != {response.data}")
 
         except Exception as exc:
-            self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
+            self._gs_evaluator.disconnect()
             raise exc
 
     def disconnect(self):
         if not self.request(disconnect_request()):
-            self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
+            self._gs_evaluator.disconnect()
 
     def terminate(self):
         self._terminate()
@@ -266,7 +270,7 @@ class connection(_worker):
                 if self.gamestate.is_connected():
                     if timeout_counter > timeout_max:
                         #TODO: notify somehow main thread
-                        self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
+                        self._gs_evaluator.disconnect()
                         continue
                     
                     with self._request_lock:
@@ -274,7 +278,7 @@ class connection(_worker):
                 # go to a next frame
                 continue
             except ConnectionError:
-                self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
+                self._gs_evaluator.disconnect()
                 time.sleep(0.1)
                 continue
             
