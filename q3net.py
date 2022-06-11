@@ -48,7 +48,7 @@ class challenge68_request(command_request):
 class challenge71_request(command_request):
     def __init__(self):
         self.challenge = random.randint(-2147483648, 2147483647)
-        super().__init__(b"getchallenge " + str(self.challenge), "challengeResponse")
+        super().__init__(b"getchallenge " + str(self.challenge).encode(), "challengeResponse")
 
 class connection_request(command_request):
     def __init__(self, userinfo):
@@ -300,5 +300,4 @@ class connection(_worker):
                 # send client state in the end of the frame
                 if self.gamestate.is_connected():
                     self._transport.send( self._protocol.client_frame() )
-        
-        print("EXIT WORK END")#TODO: delete me
+                    

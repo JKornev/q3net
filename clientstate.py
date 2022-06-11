@@ -33,6 +33,7 @@ class _gamestate_base:
         self._challenge     = 0 # proto 71
         self._message_seq   = 0 # clc.serverMessageSequence
         self._command_seq   = 0 # clc.serverCommandSequence
+        self._outgoing_seq  = 1 # chan->outgoingSequence
         self._server_id     = 0 # used
         self._server_time   = 0 # ???
         self._reliable_ack  = 0 # clc.reliableAcknowledge
@@ -161,7 +162,7 @@ class evaluator(gamestate):
         return self
 
     def disconnect(self):
-        self._gs_evaluator.change_state(defines.connstate_t.CA_DISCONNECTED)
+        self.change_state(defines.connstate_t.CA_DISCONNECTED)
 
     def execute(self, packet):
         # Notify about a new packet
@@ -240,12 +241,16 @@ class evaluator(gamestate):
                 writer.write_long(self._server_time + 100)
             writer.write_bits(0, 1) # no changes
 
+            writer.write_byte(defines.clc_ops_e.clc_EOF.value)
+
             packet = bytearray(b"" \
-                + sequence.to_bytes(4, "little", signed=True) \
+                + self._outgoing_seq.to_bytes(4, "little", signed=True) \
                 + self._qport.to_bytes(2, "little", signed=False) \
                 + writer.data)
 
             self.__encrypt_packet(server_id, sequence, command_seq, packet)
+
+            self._outgoing_seq += 1
 
             return packet
 
