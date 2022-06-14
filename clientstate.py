@@ -192,7 +192,6 @@ class evaluator(gamestate):
 
     def set_player_profile(self, userinfo):
         with self._lock:
-            self._userinfo.clear()
             self._userinfo = userinfo
 
     def generate_client_frame(self):
@@ -219,7 +218,6 @@ class evaluator(gamestate):
             writer.oob = False
             
             writer.write_long(server_id)    # serverid
-            #TODO: check is the sequence is valid, we put the same sequence in the bottom
             writer.write_long(sequence)     # messageAcknowledge - usermove encryption
             writer.write_long(command_seq)  # reliableAcknowledge - usermove\msg encryption
 

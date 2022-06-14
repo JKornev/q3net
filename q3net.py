@@ -54,6 +54,10 @@ class connection_request(command_request):
     def __init__(self, userinfo):
         super().__init__(b"connect " + q3huff.compress(userinfo.serialize().encode()), "connectResponse")
 
+class proxy_request(command_request):
+    def __init__(self, userinfo):
+        super().__init__(b"connect " + q3huff.compress(userinfo.serialize().encode()), "print") # print\n/reconnect ASAP!\n
+
 class disconnect_request(command_request):
     def __init__(self):
         super().__init__("disconnect", None, require_connection=True)
@@ -177,7 +181,7 @@ class connection(_worker):
         # Open worker thread
         super().__init__()
 
-    def connect(self, userinfo: clientstate.userinfo = None, attempts = 10):
+    def connect(self, userinfo: clientstate.userinfo = None, attempts = 10, proxy = None):
         if self.gamestate.is_connected():
             raise Exception("Already connected")
         
@@ -209,14 +213,30 @@ class connection(_worker):
             #TODO: verify protocol version
             userinfo = self.gamestate.userinfo
             userinfo["challenge"] = response.data[0]
-            userinfo["qport"] = self.gamestate.qport
             userinfo["protocol"] = self._protocol.protocol
-            response = self.request(connection_request(userinfo))
-            if not response:
-                raise Exception("Can't receive connection response")
+            if not "qport" in userinfo:
+                userinfo["qport"] = self.gamestate.qport
 
-            if response.data and response.data != challenge:
-                raise Exception(f"Wrong challenge {challenge} != {response.data}")
+            if proxy:
+                # On proxy connection 
+                userinfo["prx"] = proxy
+                for i in range(attempts):
+                    response = self.request(proxy_request(userinfo))
+                    if response:
+                        break
+                if not response:
+                    raise Exception("Can't receive connection response")
+
+                self._gs_evaluator.change_state( to = defines.connstate_t.CA_DISCONNECTED )
+                self.connect(userinfo= userinfo, attempts= attempts, proxy= None)
+            else:
+                # Normal connection
+                response = self.request(connection_request(userinfo))
+                if not response:
+                    raise Exception("Can't receive connection response")
+
+                if response.data and response.data != challenge:
+                    raise Exception(f"Wrong challenge {challenge} != {response.data}")
 
         except Exception as exc:
             self._gs_evaluator.disconnect()

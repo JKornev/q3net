@@ -72,6 +72,9 @@ class _protocol_base:
     def _handle_connected_packet(self, sequence, packet, size):
         if size < 4:
             return None
+
+        if not self._gamestate.is_connected():
+            return None
         
         if self._gamestate.message_seq + 1 > sequence:
              return None
