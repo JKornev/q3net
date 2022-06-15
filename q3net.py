@@ -214,7 +214,7 @@ class connection(_worker):
             userinfo = self.gamestate.userinfo
             userinfo["challenge"] = response.data[0]
             userinfo["protocol"] = self._protocol.protocol
-            if not "qport" in userinfo:
+            if not "qport" in userinfo.keys():
                 userinfo["qport"] = self.gamestate.qport
 
             if proxy:
