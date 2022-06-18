@@ -10,6 +10,7 @@ class _protocol_base:
         self._evaluator = evaluator
         self._gamestate = evaluator.gamestate
         self._connection_less = [
+            packets.parser_getservers(),
             packets.parser_print(),
             packets.parse_status(),
             packets.parse_info(),

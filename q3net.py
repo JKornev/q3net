@@ -33,6 +33,10 @@ class command_request:
         self.resp_command = response
         self.require_connection = require_connection
 
+class getservers_request(command_request):
+    def __init__(self, protocol = 68):
+        super().__init__(b"getservers " + str(protocol).encode(), "getserversResponse")
+
 class get_info_request(command_request):
     def __init__(self):
         super().__init__(b"getinfo", "infoResponse")
@@ -86,9 +90,6 @@ class _worker:
         self.__lock = threading.Lock()
         self.__worker = threading.Thread(target=self._worker_entrypoint)
         self.__worker.start()
-
-    def __del__(self):
-        self._terminate()
 
     def _terminate(self):
         with self.__lock:
@@ -247,7 +248,7 @@ class connection(_worker):
             self._gs_evaluator.disconnect()
 
     def terminate(self):
-        self._terminate()
+        super()._terminate()
 
     def request(self, request: command_request, timeout = __REQUEST_TIMEOUT) -> server_packet:
         with self._request_lock:

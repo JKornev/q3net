@@ -40,7 +40,32 @@ class parser_unknown(parser_base):
         return True # any packet is unknown in the end of the check
 
     def parse(self, packet):
-        return server_packet(packet, self._command) 
+        return server_packet(packet, self._command)
+
+class parser_getservers(parser_base):
+    def __init__(self) -> None:
+        super().__init__("getserversResponse")
+        
+    def equal(self, command):
+        return command.startswith(self._command + "\\")
+
+    def parse(self, packet):
+        servers = []
+        i = 18
+        while (i + 7) < len(packet):
+            assert(packet[i] == '\\')
+            address = "{}.{}.{}.{}:{}".format(
+                ord(packet[i+1]), 
+                ord(packet[i+2]), 
+                ord(packet[i+3]), 
+                ord(packet[i+4]), 
+                ord(packet[i+6]) | (ord(packet[i+5]) << 8)
+            )
+            servers.append(address)
+            i += 7
+        servers.append(len(servers))
+        servers.append(packet[i:])
+        return server_packet(servers, self._command) 
 
 class parser_print(parser_base):
     def __init__(self) -> None:
