@@ -2,6 +2,7 @@ import threading
 import random
 import collections
 import defines
+import shlex
 import utils
 import q3huff
 
@@ -30,18 +31,19 @@ class _gamestate_base:
         self._reset_state()
 
     def _reset_state(self):
-        self._challenge     = 0 # proto 71
-        self._message_seq   = 0 # clc.serverMessageSequence
-        self._command_seq   = 0 # clc.serverCommandSequence
-        self._outgoing_seq  = 1 # chan->outgoingSequence
-        self._server_id     = 0 # used
-        self._server_time   = 0 # ???
-        self._reliable_ack  = 0 # clc.reliableAcknowledge
-        self._reliable_seq  = 0 # clc.reliableSequence
-        self._pure          = False
-        self._checksum_feed = 0
+        self._challenge         = 0 # proto 71
+        self._message_seq       = 0 # clc.serverMessageSequence
+        self._command_seq       = 0 # clc.serverCommandSequence
+        self._outgoing_seq      = 1 # chan->outgoingSequence
+        self._server_id         = 0 # used
+        self._server_time       = 0 # ???
+        self._reliable_ack      = 0 # clc.reliableAcknowledge
+        self._reliable_seq      = 0 # clc.reliableSequence
+        self._pure              = False
+        self._checksum_feed     = 0
         self._reliable_commands = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
         self._server_commands   = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
+        self._config_strings    = collections.OrderedDict()
 
     def __default_userinfo(self):
         ui = userinfo()
@@ -130,12 +132,23 @@ class gamestate(_gamestate_base):
     def qport(self):
         with self._lock:
             return self._qport
+    
+    @property
+    def config_string(self, inx):
+        with self._lock:
+            if inx in self._config_strings:
+                return self._config_strings[inx]
+            return None
 
     def is_connected(self) -> bool:
         with self._lock:
             return self._state.value >= defines.connstate_t.CA_CONNECTED.value
 
 class events_handler:
+    #TODO: instead of evaluator lets pass another object with restricted methods
+    #      cuz evaluator is mostly private class
+    def __init__(self, evaluator, context) -> None:
+        pass
 
     def event_connected(self, host, port, srv_id: int):
         pass # stub
@@ -153,9 +166,9 @@ class events_handler:
         pass # stub
 
 class evaluator(gamestate):
-    def __init__(self, handler: events_handler, host, port) -> None:
+    def __init__(self, handler: events_handler, handler_context, host, port) -> None:
         super().__init__(host, port)
-        self._handler = handler()
+        self._handler = handler(self, handler_context)
 
     @property
     def gamestate(self) -> gamestate:
@@ -303,22 +316,15 @@ class evaluator(gamestate):
                 self._state = defines.connstate_t.CA_PRIMED
 
             # Load config string
-            cfgstr = packet.config_string
-            if defines.configstr_t.CS_SYSTEMINFO.value in cfgstr:
-                ui = userinfo()
-                ui.deserialize( cfgstr[ defines.configstr_t.CS_SYSTEMINFO.value ] )
-                self._server_id = int(ui['sv_serverid'])
-                if 'sv_pure' in ui.keys():
-                    self._pure = bool(int(ui['sv_pure']))
-            
-                # Step 4: make connection completed on the first gamestate frame
-                if self._state == defines.connstate_t.CA_PRIMED:
-                    self._state = defines.connstate_t.CA_ACTIVE
-                    self._handler.event_connected(self._server_host, self._server_port, self._server_id)
+            for inx, cfg in packet.config_string.items():
+                self.__load_config_string(inx, cfg)
 
-            for inx, cfg in cfgstr.items():
-                self._handler.event_configstring(inx, cfg)
-            
+                if defines.configstr_t.CS_SYSTEMINFO.value == inx:
+                    # Step 4: make connection completed on the first gamestate frame
+                    if self._state == defines.connstate_t.CA_PRIMED:
+                        self._state = defines.connstate_t.CA_ACTIVE
+                        self._handler.event_connected(self._server_host, self._server_port, self._server_id)
+
             # Load commands
             prev = -1
             disconnect = False
@@ -332,16 +338,18 @@ class evaluator(gamestate):
 
                     # Step 5: disconnect when server kicks us
                     if txt.startswith("disconnect"):
-                        tokens = txt.split(maxsplit=1)
+                        tokens = shlex.split(txt, posix= False)
                         if len(tokens) > 1:
-                            disconnect_reason = tokens[1]
+                            disconnect_reason = tokens[1].strip('\"')
                         else:
                             disconnect_reason = "no reason"
                         disconnect = True
                     elif txt.startswith("cs "):
-                        tokens = txt.split(maxsplit=2)
+                        tokens = shlex.split(txt, posix= False)
                         if len(tokens) >= 3:
-                            self._handler.event_configstring(int(tokens[1]), tokens[2])
+                            key = int(tokens[1])
+                            value = tokens[2].strip('\"')
+                            self.__load_config_string(key, value)
 
             if packet.command_seq > self._command_seq:
                  #assert(packet.command_seq == self.gamestate.command_seq + 1)
@@ -365,6 +373,23 @@ class evaluator(gamestate):
             if disconnect:
                 self._handler.event_disconnected(disconnect_reason)
                 self._state = defines.connstate_t.CA_DISCONNECTED
+
+    def __load_config_string(self, index, value):
+        if not value:
+            if index in self._config_strings:
+                self._handler.event_configstring(index, None)
+                self._config_strings.pop(index)
+            return
+
+        if defines.configstr_t.CS_SYSTEMINFO.value == index:
+            ui = userinfo()
+            ui.deserialize(value)
+            self._server_id = int(ui['sv_serverid'])
+            if 'sv_pure' in ui.keys():
+                self._pure = bool(int(ui['sv_pure']))
+
+        self._handler.event_configstring(index, value)
+        self._config_strings[index] = value
 
     def __encrypt_packet(self, server_id, sequence, command_seq, packet):
         CL_ENCODE_START = 18
