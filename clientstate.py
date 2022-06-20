@@ -17,7 +17,10 @@ class userinfo(collections.OrderedDict):
     def deserialize(self, text):
         self.clear()
         chunks = text.strip("\"").split('\\')
-        it = iter(chunks[1:])
+        if not chunks[0]:
+            it = iter(chunks[1:])
+        else:
+            it = iter(chunks)
         for key in it:
             self.update( {key : next(it)} )
 
@@ -66,7 +69,9 @@ class _gamestate_base:
         return ui
 
 class gamestate(_gamestate_base):
-    _lock = threading.RLock()
+    def __init__(self, host, port) -> None:
+        self._lock = threading.RLock()
+        super().__init__(host, port)
 
     @property
     def conn_state(self):
@@ -133,7 +138,6 @@ class gamestate(_gamestate_base):
         with self._lock:
             return self._qport
     
-    @property
     def config_string(self, inx):
         with self._lock:
             if inx in self._config_strings:

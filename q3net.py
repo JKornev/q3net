@@ -251,6 +251,9 @@ class connection(_worker):
         super()._terminate()
 
     def request(self, request: command_request, timeout = __REQUEST_TIMEOUT) -> server_packet:
+        if not request.req_command:
+            raise Exception("Invalid request command")
+            
         with self._request_lock:
             if request.require_connection:
                 seqence = self._protocol.queue_command(request.req_command)
@@ -263,6 +266,9 @@ class connection(_worker):
         return self._requestor.wait(timeout)
 
     def send(self, command: str, force_connless = False):
+        if not command:
+            raise Exception("Invalid request command")
+            
         with self._request_lock:
             if self.gamestate.is_connected() and not force_connless:
                 # Push reliable command if we are connected

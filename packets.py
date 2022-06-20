@@ -216,11 +216,10 @@ class server_snapshot:
             self.entities.append(entity)
 
 class server_gamestate:
-    config_string = {}
-    baselines = []
-
     def __init__(self, packet) -> None:
         self.sequence = int.from_bytes(packet.read_data(4), "little")
+        self.config_string = {}
+        self.baselines = []
 
         while True:
             cmd = packet.read_uchar()
@@ -261,14 +260,13 @@ class player_state_field:
 #   Player state parser
 
 class player_state(list):
-    state = []
-    stats = []
-    persistant = []
-    ammo = []
-    powerups = []
-
     def __init__(self, packet):
         self.__load_struct_config()
+        self.state = []
+        self.stats = []
+        self.persistant = []
+        self.ammo = []
+        self.powerups = []
 
         fields = packet.read_uchar()
         assert(fields < len(self))
