@@ -2,6 +2,7 @@ import threading
 import random
 import traceback
 import time
+import socket
 import clientstate
 import protocol
 import packets
@@ -292,11 +293,10 @@ class connection(_worker):
             
             try:
                 raw = self._transport.recv(0x4000)
-            except TimeoutError:
+            except socket.timeout:
                 timeout_counter += 1
                 if self.gamestate.is_connected():
                     if timeout_counter > timeout_max:
-                        #TODO: notify somehow main thread
                         self._gs_evaluator.disconnect()
                         continue
                     
