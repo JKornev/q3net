@@ -174,7 +174,7 @@ class parse_server_frame(parser_base):
             elif cmd == defines.svc_ops_e.svc_serverCommand.value:
                 seq = packet.read_uint() # reliableAcknowledge
                 txt = packet.read_string()
-                frame.commands.append((seq, txt.strip()))
+                frame.commands.append((seq, txt))
                 if seq > frame.command_seq:
                     frame.command_seq = seq
             elif cmd == defines.svc_ops_e.svc_download.value:
