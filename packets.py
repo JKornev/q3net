@@ -259,9 +259,62 @@ class player_state_field:
 # ========================
 #   Player state parser
 
-class player_state(list):
+def load_ps_struct_config():
+    return (
+        player_state_field(32),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(8),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(16, True),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(8),
+        player_state_field(16, True),
+        player_state_field(16),
+        player_state_field(8),
+        player_state_field(4),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(16),
+        player_state_field(10),
+        player_state_field(4),
+        player_state_field(16),
+        player_state_field(10),
+        player_state_field(16),
+        player_state_field(16),
+        player_state_field(16),
+        player_state_field(8),
+        player_state_field(8, True),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(16),
+        player_state_field(16),
+        player_state_field(12),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(8),
+        player_state_field(5),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(0),
+        player_state_field(10),
+        player_state_field(16)
+    )
+
+class player_state:
+    _struct = load_ps_struct_config()
+
     def __init__(self, packet):
-        self.__load_struct_config()
         self.state = []
         self.stats = []
         self.persistant = []
@@ -269,10 +322,10 @@ class player_state(list):
         self.powerups = []
 
         fields = packet.read_uchar()
-        assert(fields < len(self))
+        assert(fields < len(self._struct))
 
         for i in range(fields):
-            entry = self.__getitem__(i)
+            entry = self._struct[i]
             
             loaded = packet.read_bits(1)
             if not loaded:
@@ -309,56 +362,6 @@ class player_state(list):
                 if bits & (1<<i):
                     self.powerups.append((i, packet.read_uint()))
 
-    def __load_struct_config(self):
-        self.append(player_state_field(32))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(8))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(16, True))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(8))
-        self.append(player_state_field(16, True))
-        self.append(player_state_field(16))
-        self.append(player_state_field(8))
-        self.append(player_state_field(4))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(16))
-        self.append(player_state_field(10))
-        self.append(player_state_field(4))
-        self.append(player_state_field(16))
-        self.append(player_state_field(10))
-        self.append(player_state_field(16))
-        self.append(player_state_field(16))
-        self.append(player_state_field(16))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8, True))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(16))
-        self.append(player_state_field(16))
-        self.append(player_state_field(12))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(8))
-        self.append(player_state_field(5))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(0))
-        self.append(player_state_field(10))
-        self.append(player_state_field(16))
-
 # ========================
 #   Entity packet parser
 
@@ -382,10 +385,65 @@ class entity_state_field:
             else:
                 self.value = packet.read_bits(32)
 
-class entity_state(list):
-    def __init__(self, packet):
-        self.__load_struct_config()
+def load_es_struct_config():
+    return (
+        entity_state_field(32),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(10),
+        entity_state_field(0),
+        entity_state_field(8),
+        entity_state_field(8),
+        entity_state_field(8),
+        entity_state_field(8),
+        entity_state_field(10),
+        entity_state_field(8),
+        entity_state_field(19),
+        entity_state_field(10),
+        entity_state_field(8),
+        entity_state_field(8),
+        entity_state_field(0),
+        entity_state_field(32),
+        entity_state_field(8),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(24),
+        entity_state_field(16),
+        entity_state_field(8),
+        entity_state_field(10),
+        entity_state_field(8),
+        entity_state_field(8),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(8),
+        entity_state_field(0),
+        entity_state_field(32),
+        entity_state_field(32),
+        entity_state_field(32),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(32),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(0),
+        entity_state_field(32),
+        entity_state_field(16)
+    )
 
+class entity_state:
+    _struct = load_es_struct_config()
+    
+    def __init__(self, packet):
         self.number = packet.read_bits(10)
         #assert( self.number <= (1 << 10) )
 
@@ -399,69 +457,16 @@ class entity_state(list):
             return
         
         fields = packet.read_uchar()
-        assert(fields <= len(self))
+        assert(fields <= len(self._struct))
 
         for i in range(fields):
-            entry = self.__getitem__(i)
+            entry = self._struct[i]
             
             changed = packet.read_bits(1) # changed
             if not changed:
                 continue
             
             entry.load_value(packet)
-
-    def __load_struct_config(self):
-        self.append(entity_state_field(32))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(10))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(10))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(19))
-        self.append(entity_state_field(10))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(32))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(24))
-        self.append(entity_state_field(16))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(10))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(8))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(32))
-        self.append(entity_state_field(32))
-        self.append(entity_state_field(32))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(32))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(0))
-        self.append(entity_state_field(32))
-        self.append(entity_state_field(16))
 
 # connectResponse
 # infoResponse
