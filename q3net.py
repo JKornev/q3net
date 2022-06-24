@@ -165,7 +165,7 @@ class connection(_worker):
     __REQUEST_TIMEOUT = 3.0
 
     def __init__(self, host, port, protocol = protocol_q3v68,
-                 handler = events_handler, handler_context = None, fps: int = 60):
+                 handler = events_handler, fps: int = 60):
         assert(1 <= fps <= 125)
         # FPS
         self._fps = fps
@@ -175,7 +175,7 @@ class connection(_worker):
         self._port = port
         self._transport = utils.udp_transport(host, self._port, self._frame_timeout)
         # Protocol
-        self._gs_evaluator = clientstate.evaluator(handler, handler_context, self._host, self._port)
+        self._gs_evaluator = clientstate.evaluator(handler, self._host, self._port)
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._request_lock = threading.Lock()

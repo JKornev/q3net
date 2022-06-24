@@ -148,54 +148,53 @@ class gamestate(_gamestate_base):
         with self._lock:
             return self._state.value >= defines.connstate_t.CA_CONNECTED.value
 
+    def queue_command(self, command: str) -> int:
+        with self._lock:
+            assert(64 > self._reliable_seq - self._reliable_ack)
+            self._reliable_seq += 1
+            inx = self._reliable_seq % 64
+            self._reliable_commands[inx] = command
+            return self._reliable_seq
+
 class events_handler:
-    #TODO: instead of evaluator lets pass another object with restricted methods
-    #      cuz evaluator is mostly private class
-    def __init__(self, evaluator, context) -> None:
+    def __init__(self) -> None:
         pass
 
-    def event_connected(self, host, port, srv_id: int):
+    def event_connected(self, gamestate: gamestate, host: str, port: int, srv_id: int):
         pass # stub
 
-    def event_disconnected(self, reason: str):
+    def event_disconnected(self, gamestate: gamestate, reason: str):
         pass # stub
 
-    def event_packet(self, packet):
+    def event_packet(self, gamestate: gamestate, packet):
         pass # stub
 
-    def event_command(self, seq: int, cmd: str):
+    def event_command(self, gamestate: gamestate, seq: int, cmd: str):
         pass # stub
 
-    def event_configstring(self, inx: int, txt: str):
+    def event_configstring(self, gamestate: gamestate, inx: int, txt: str):
         pass # stub
 
 class evaluator(gamestate):
-    def __init__(self, handler: events_handler, handler_context, host, port) -> None:
+    def __init__(self, handler: events_handler, host, port) -> None:
         super().__init__(host, port)
-        self._handler = handler(self, handler_context)
+        self._handler = handler
 
     @property
     def gamestate(self) -> gamestate:
-        return self
-
-    def disconnect(self):
-        self.change_state(defines.connstate_t.CA_DISCONNECTED)
+        return self 
 
     def execute(self, packet):
         # Notify about a new packet
-        self._handler.event_packet(packet)
+        self._handler.event_packet(self, packet)
 
         if utils.connection_sequence(packet.sequence):
             self._execute_connected(packet)
         else:
             self._execute_connection_less(packet)
-    
-    def queue_command(self, command: str) -> int:
-        with self._lock:
-            self._reliable_seq += 1
-            inx = self._reliable_seq % 64
-            self._reliable_commands[inx] = command
-            return self._reliable_seq
+
+    def disconnect(self):
+        self.change_state(defines.connstate_t.CA_DISCONNECTED)
 
     def change_state(self, to, frm = None):
         with self._lock:
@@ -203,7 +202,7 @@ class evaluator(gamestate):
                 raise Exception(f"Current state {self._state} != {frm}")
 
             if to == defines.connstate_t.CA_DISCONNECTED and self._state == defines.connstate_t.CA_ACTIVE:
-                self._handler.event_disconnected("")
+                self._handler.event_disconnected(self, "manual")
 
             self._state = to
 
@@ -293,7 +292,7 @@ class evaluator(gamestate):
     def _execute_connection_less(self, packet):
         # Notify event handler
         if packet.data:
-            self._handler.event_command(packet.sequence, packet.data)
+            self._handler.event_command(self, packet.sequence, packet.data)
 
         with self._lock:
             # Step 1: getting challenge
@@ -327,7 +326,7 @@ class evaluator(gamestate):
                     # Step 4: make connection completed on the first gamestate frame
                     if self._state == defines.connstate_t.CA_PRIMED:
                         self._state = defines.connstate_t.CA_ACTIVE
-                        self._handler.event_connected(self._server_host, self._server_port, self._server_id)
+                        self._handler.event_connected(self, self._server_host, self._server_port, self._server_id)
 
             # Load commands
             prev = -1
@@ -336,7 +335,7 @@ class evaluator(gamestate):
             for seq, txt in packet.commands:
                 if seq > self._command_seq:
                     assert(prev == -1 or prev + 1 == seq)
-                    self._handler.event_command(seq, txt)
+                    self._handler.event_command(self, seq, txt)
                     self._server_commands[seq % 64] = txt
                     prev = seq
 
@@ -375,13 +374,13 @@ class evaluator(gamestate):
                     pass
             
             if disconnect:
-                self._handler.event_disconnected(disconnect_reason)
+                self._handler.event_disconnected(self, disconnect_reason)
                 self._state = defines.connstate_t.CA_DISCONNECTED
 
     def __load_config_string(self, index, value):
         if not value:
             if index in self._config_strings:
-                self._handler.event_configstring(index, None)
+                self._handler.event_configstring(self, index, None)
                 self._config_strings.pop(index)
             return
 
@@ -392,7 +391,7 @@ class evaluator(gamestate):
             if 'sv_pure' in ui.keys():
                 self._pure = bool(int(ui['sv_pure']))
 
-        self._handler.event_configstring(index, value)
+        self._handler.event_configstring(self, index, value)
         self._config_strings[index] = value
 
     def __encrypt_packet(self, server_id, sequence, command_seq, packet):
