@@ -2,6 +2,7 @@ import threading
 import random
 import collections
 import defines
+import packets
 import shlex
 import utils
 import q3huff
@@ -43,10 +44,12 @@ class _gamestate_base:
         self._reliable_ack      = 0 # clc.reliableAcknowledge
         self._reliable_seq      = 0 # clc.reliableSequence
         self._pure              = False
+        self._pure_ack          = False
         self._checksum_feed     = 0
         self._reliable_commands = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
         self._server_commands   = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
         self._config_strings    = collections.OrderedDict()
+        self._mode              = 'baseq3'
 
     def __default_userinfo(self):
         ui = userinfo()
@@ -137,6 +140,11 @@ class gamestate(_gamestate_base):
     def qport(self):
         with self._lock:
             return self._qport
+
+    @property
+    def mode(self):
+        with self._lock:
+            return self._mode
     
     def config_string(self, inx):
         with self._lock:
@@ -166,7 +174,7 @@ class events_handler:
     def event_disconnected(self, gamestate: gamestate, reason: str):
         pass # stub
 
-    def event_packet(self, gamestate: gamestate, packet):
+    def event_packet(self, gamestate: gamestate, packet: packets.server_packet):
         pass # stub
 
     def event_command(self, gamestate: gamestate, seq: int, cmd: str):
@@ -363,15 +371,9 @@ class evaluator(gamestate):
 
             if packet.checksum_feed:
                 self._checksum_feed = packet.checksum_feed
-                if self._pure:
-                    #TODO: generate checksum
-                    #self.queue_command("cp {} {} {} @ {}".format(
-                    #    self.gamestate.server_id,
-                    #    -680722472, #osp cgame checksum
-                    #    -226345602, #osp ui checksum
-                    #    self.gamestate.checksum_feed
-                    #))
-                    pass
+                if self._pure and not self._pure_ack:
+                    self._pure_ack = True
+                    self.queue_command(self.__get_pure_checksums_packet("osp"))
             
             if disconnect:
                 self._handler.event_disconnected(self, disconnect_reason)
@@ -390,6 +392,8 @@ class evaluator(gamestate):
             self._server_id = int(ui['sv_serverid'])
             if 'sv_pure' in ui.keys():
                 self._pure = bool(int(ui['sv_pure']))
+            if 'fs_game' in ui.keys():
+                self._mode = ui['fs_game']
 
         self._handler.event_configstring(self, index, value)
         self._config_strings[index] = value
@@ -437,3 +441,8 @@ class evaluator(gamestate):
 
         return packet
 
+    def __get_pure_checksums_packet(self, mode):
+        feed = self.gamestate.checksum_feed
+        cgame = utils.calculate_checksum(mode, "cgame", feed)
+        ui    = utils.calculate_checksum(mode, "ui", feed)
+        return "cp {} {} {} @ {}".format( self.gamestate.server_id, cgame, ui, feed )

@@ -162,7 +162,7 @@ class parse_server_frame(parser_base):
                 gs = server_gamestate(packet)
                 frame.config_string.update(gs.config_string)
                 frame.baselines.extend(gs.baselines)
-                self.checksum_feed = gs.checksum_feed
+                frame.checksum_feed = gs.checksum_feed
                 if gs.sequence > frame.command_seq:
                     frame.command_seq = gs.sequence
             elif cmd == defines.svc_ops_e.svc_configstring.value:
@@ -238,7 +238,7 @@ class server_gamestate:
                 self.baselines.append( entity_state(packet) )
 
         self.client_num = packet.read_uint()
-        self.checksum_feed = packet.read_uint()
+        self.checksum_feed = packet.read_int()
 
 class player_state_field:
     def __init__(self, bits, signed = False):
