@@ -165,7 +165,7 @@ class connection(_worker):
     __REQUEST_TIMEOUT = 3.0
 
     def __init__(self, host, port, protocol = protocol_q3v68,
-                 handler = events_handler, fps: int = 60):
+                 handler = events_handler(), fps: int = 60):
         assert(1 <= fps <= 125)
         # FPS
         self._fps = fps
