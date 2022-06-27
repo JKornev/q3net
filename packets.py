@@ -81,7 +81,8 @@ class parse_status(parser_base):
         super().__init__("statusResponse")
 
     def parse(self, packet):
-        lines = packet.splitlines()
+        #NOTE: sometimes splitlines() works unexpected therefore better to use split() instead
+        lines = packet.split('\n')
         assert(len(lines) >= 2)
 
         info = clientstate.userinfo()
