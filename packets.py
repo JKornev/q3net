@@ -90,6 +90,9 @@ class parse_status(parser_base):
 
         players = []
         for i in range(2, len(lines)):
+            if not lines[i]:
+                continue
+            
             fields = lines[i].split(maxsplit=2)
             assert(len(fields) == 3)
             players.append((int(fields[0]), int(fields[1]), fields[2].strip("\"")))
