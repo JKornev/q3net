@@ -9,6 +9,9 @@ MAX_RELIABLE_COMMANDS = 64
 class configstr_t(enum.Enum):
     CS_SERVERINFO       = 0	# an info string with all the serverinfo cvars
     CS_SYSTEMINFO       = 1 # an info string for server system to client system configuration (timescale, etc)
+    CS_VOTE_TIME        = 8
+    CS_VOTE_STRING      = 9
+    CS_PLAYERS          = 544
 
 class connstate_t(enum.Enum):
     #CA_UNINITIALIZED    = 0
