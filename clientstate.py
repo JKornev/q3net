@@ -5,7 +5,7 @@ import defines
 import packets
 import shlex
 import utils
-import q3huff
+import q3huff2
 
 class userinfo(collections.OrderedDict): 
     def serialize(self):

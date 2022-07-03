@@ -1,6 +1,6 @@
 import socket
 import hashlib
-import q3huff
+import q3huff2
 import defines
 
 # ========================

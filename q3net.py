@@ -8,7 +8,7 @@ import protocol
 import packets
 import utils
 import defines
-import q3huff
+import q3huff2
 
 # ========================
 #   External aliases
