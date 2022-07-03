@@ -2,14 +2,17 @@ from queue import Queue
 import time
 import q3net
 import threading
+import gc
+import sys
+import q3huff2
 
 ui = q3net.userinfo()
-ui['client']         = 'Q3 1.32b'
+ui['client']         = 'Q3 1.32e'
 ui['name']           = 'UnnamedPlayer'
-ui['model']          = 'sarge'
-ui['headmodel']      = 'sarge'
-ui['team_model']     = 'james'
-ui['team_headmodel'] = 'james'
+ui['model']          = 'uriel/default'
+ui['headmodel']      = 'uriel/default'
+ui['team_model']     = 'uriel/default'
+ui['team_headmodel'] = 'uriel/default'
 ui['handicap']       = 100
 ui['teamtask']       = 0
 ui['sex']            = 'male'
@@ -20,31 +23,37 @@ ui['snaps']          = 40
 ui['cl_maxpackets']  = 125
 ui['cl_timeNudge']   = 0
 ui['cl_anonymous']   = 0
-ui['osp_client']     = 1008
+ui['cg_predictItems'] = 1
+ui['cl_guid']        = 'E7EBA5761D35155FFAC7BF13AA67DB41'
+ui['cg_scorePlums']  = 0
+ui['cg_smoothClients'] = 1
+#ui['osp_client']     = 1008
+ui['osp_client'] = 20190331 #CPMA
+ui['teamoverlay']    = 1
 
 class handler(q3net.events_handler):
 
-    def event_connected(self, host, port, srv_id: int):
+    def event_connected(self, gamestate, host, port, srv_id):
         print(f"Connected to {host}:{port} id:{srv_id}")
 
-    def event_disconnected(self, reason: str):
+    def event_disconnected(self, gamestate, reason):
         print(f"Disconnected, reason : {reason}")
 
-    def event_packet(self, packet):
-        print(f"Packet {packet.data}")
+    #def event_packet(self, gamestate, packet):
+    #    print(f"Packet {packet.data}")
 
-    def event_command(self, seq: int, cmd: str):
+    def event_command(self, gamestate, seq, cmd):
         print(f"Command {seq} : {cmd}")
 
-    def event_configstring(self, inx: int, txt: str):
+    def event_configstring(self, gamestate, inx, txt):
         print(f"ConfigString {inx} : {txt}")
+        pass
 
 def client():
-    connection = q3net.connection("localhost", 27960, handler=handler)
-    assert( connection.request(q3net.get_status_request())  != None )
-    assert( connection.request(q3net.get_info_request())    != None )
-
-    connection.connect()
+    connection = q3net.connection("localhost", 27960, handler=handler())
+    #connection = q3net.connection("167.71.55.62", 27960, handler=handler()) #CPMA pure
+    
+    connection.connect(userinfo= ui)
 
     while True:
         cmd = input(">")
@@ -53,84 +62,31 @@ def client():
         connection.send(cmd)
 
     connection.disconnect()
-    print("buy")
-    #time.sleep(5)
+    print("bye")
     connection.terminate()
 
-queue = Queue()
-class reconn_handler(q3net.events_handler):
-
-    def event_connected(self, host, port, srv_id: int):
-        print(f"Connected to {host}:{port} id:{srv_id}")
-
-    def event_disconnected(self, reason: str):
-        print(f"Disconnected to {reason}")
-        queue.put_nowait(1)
-
-    def event_packet(self, packet):
-        print(f"Packet {packet.data}")
-
-    def event_command(self, seq: int, cmd: str):
-        print(f"Command {seq} : {cmd}")
-
-    def event_configstring(self, inx: int, txt: str):
-        print(f"ConfigString {inx} : {txt}")
-
-
 def main():
-    c = q3net.connection("q3.playground.ru", 27967, handler=handler)
-
-    '''while True:
-        try:
-            c.connect()
-            break
-        except Exception:
-            time.sleep(1)'''
-    c.connect()
-    
-    print("connected")
-    time.sleep(1)
-    c.disconnect()
+    print("master.quake3arena.com")
+    connection = q3net.connection("master.quake3arena.com", 27950, handler=handler)
+    assert( connection.request(q3net.getservers_request()) != None )
     time.sleep(2)
-    c.connect(userinfo=ui)
-    print("connected")
-    time.sleep(5)
-    c.terminate()
-    pass
+    connection.terminate()
 
+    print("master.ioquake3.org")
+    connection = q3net.connection("master.ioquake3.org", 27950, handler=handler)
+    assert( connection.request(q3net.getservers_request()) != None )
+    time.sleep(1)
+    connection.terminate()
+
+    print("master.maverickservers.com")
+    connection = q3net.connection("master.maverickservers.com", 27950, handler=handler)
+    assert( connection.request(q3net.getservers_request()) != None )
+    time.sleep(1)
+    connection.terminate()
+            
 if __name__ == '__main__':
     client()
     exit()
-    
-    '''c = q3net.connection("q3.playground.ru", 27967, uinfo=ui, handler=handler)
-    #time.sleep(1)
-    c.send("getinfo")
-    time.sleep(1)
-    print( c.request(q3net.get_info_request()) )
-    print( c.request(q3net.get_status_request()) )
-    c.connect()
-    time.sleep(5)
-    for i in range(20):
-        #time.sleep(1)
-        #r = c.request(q3net.say_request(":)"))
-        #print(f"say {r.data}")
-        r = c.send("hi")
-        print(f"say {r}")
-        
-    time.sleep(3.0)
-    c.request(q3net.custom_request("players"))
-
-    time.sleep(1.0)
-    print("!!!! disconnecting")
-    c.disconnect()
-    print("!!!! terminating")
-    c.terminate()
-    print("!!!! done")
-    #print(ui.serialize())
-    #ui.deserialize(ui.serialize())
-    #print(ui)'''
-
-    main()
 
     
 

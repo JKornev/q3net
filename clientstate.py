@@ -373,7 +373,7 @@ class evaluator(gamestate):
                 self._checksum_feed = packet.checksum_feed
                 if self._pure and not self._pure_ack:
                     self._pure_ack = True
-                    self.queue_command(self.__get_pure_checksums_packet("osp"))
+                    self.queue_command(self.__get_pure_checksums_packet(self._mode))
             
             if disconnect:
                 self._handler.event_disconnected(self, disconnect_reason)
