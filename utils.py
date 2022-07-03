@@ -271,6 +271,16 @@ cpma_pak152_pack = (
     b"\xfa\xd4\xbc\xd8",
     "z-cpma-pak152.pk3"
 )
+xp_pak23_pack = (
+    17,
+    b"\x4d\xad\x72\xf0\x4b\x5a\x06\x2d\x83\x99\x03\x0b\xde\x6e\xf0\xcb"\
+    b"\x6e\xf4\x3e\x31\xf5\x39\x7b\xe6\x21\x97\xc3\xeb\x01\xbe\xc7\x6c"\
+    b"\x0d\x0e\x1d\x99\xde\x4c\x47\xca\x24\x0d\x01\x89\x9f\xf9\xe0\x40"\
+    b"\x59\x26\x62\x82\x5d\xb4\x2e\xe2\xc1\xc0\x8d\x9e\xc4\x3a\x4f\x3b"\
+    b"\xab\xd6\x74\x28",
+    "z-xp-2_3.pk3"
+)
+#excessiveplus
 
 pk3_checksum_table = {
     "baseq3" : {
@@ -284,6 +294,10 @@ pk3_checksum_table = {
     "cpma" : {
         "cgame": cpma_pak152_pack,
         "ui": cpma_pak152_pack
+    },
+    "excessiveplus" : {
+        "cgame": xp_pak23_pack,
+        "ui": xp_pak23_pack
     },
 }
 

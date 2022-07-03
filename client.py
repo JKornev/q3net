@@ -28,7 +28,10 @@ ui['cl_guid']        = 'E7EBA5761D35155FFAC7BF13AA67DB41'
 ui['cg_scorePlums']  = 0
 ui['cg_smoothClients'] = 1
 #ui['osp_client']     = 1008
-ui['osp_client'] = 20190331 #CPMA
+#ui['osp_client'] = 20190331 #CPMA
+#\xp_client\2300
+#\xp_colors\5???5
+#\xp_name\ExcessivePlayer
 ui['teamoverlay']    = 1
 
 class handler(q3net.events_handler):
@@ -50,9 +53,11 @@ class handler(q3net.events_handler):
         pass
 
 def client():
-    connection = q3net.connection("localhost", 27960, handler=handler())
+    #connection = q3net.connection("localhost", 27960, handler=handler())
     #connection = q3net.connection("167.71.55.62", 27960, handler=handler()) #CPMA pure
-    
+    #connection = q3net.connection("89.221.217.148", 27980, handler=handler()) #e+
+    connection = q3net.connection("73.150.221.251", 27960, handler=handler()) #E+ pure
+    #46.160.53.39:27960
     connection.connect(userinfo= ui)
 
     while True:
