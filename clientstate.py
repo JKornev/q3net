@@ -238,7 +238,7 @@ class evaluator(gamestate):
             sequence    = self._message_seq
             command_seq = self._command_seq
 
-            writer = q3huff.Writer()
+            writer = q3huff2.Writer()
             writer.oob = False
             
             writer.write_long(server_id)    # serverid
@@ -419,7 +419,7 @@ class evaluator(gamestate):
     def __decrypt_packet(self, sequence, packet):
         CL_DECODE_START = 4
 
-        tail = q3huff.Reader(packet)
+        tail = q3huff2.Reader(packet)
         tail.oob = False
         reliable_ack = tail.read_long()
 

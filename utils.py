@@ -35,7 +35,7 @@ def uint_to_bytes(value: int):
 
 class reader:
     def __init__(self, data) -> None:
-        self._reader = q3huff.Reader(data)
+        self._reader = q3huff2.Reader(data)
 
     def compression(self, enable):
         self._reader.oob = not enable

@@ -57,11 +57,11 @@ class challenge71_request(command_request):
 
 class connection_request(command_request):
     def __init__(self, userinfo):
-        super().__init__(b"connect " + q3huff.compress(userinfo.serialize().encode()), "connectResponse")
+        super().__init__(b"connect " + q3huff2.compress(userinfo.serialize().encode()), "connectResponse")
 
 class proxy_request(command_request):
     def __init__(self, userinfo):
-        super().__init__(b"connect " + q3huff.compress(userinfo.serialize().encode()), "print") # print\n/reconnect ASAP!\n
+        super().__init__(b"connect " + q3huff2.compress(userinfo.serialize().encode()), "print") # print\n/reconnect ASAP!\n
 
 class disconnect_request(command_request):
     def __init__(self):
