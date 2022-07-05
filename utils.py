@@ -83,6 +83,9 @@ class reader:
 def connection_sequence(sequence : int) -> bool:
     return not (sequence == defines.NO_CONNECTION_SEQUENCE)
 
+def make_checksum(sequence, challenge):
+    return 0xFFFFFFFF & (challenge ^ (sequence * challenge))
+
 # ========================
 #   Pure
 

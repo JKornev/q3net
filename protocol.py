@@ -4,7 +4,6 @@ import utils
 import defines
 
 class _protocol_base:
-
     def __init__(self, version, evaluator: clientstate.evaluator) -> None:
         self._protocol_version = version
         self._evaluator = evaluator
@@ -31,6 +30,13 @@ class _protocol_base:
         sequence = packet.read_int()
 
         if utils.connection_sequence(sequence):
+            if self._protocol_version == 71:
+                checksum = utils.make_checksum(sequence, self._gamestate.challenge) 
+                if checksum != 0xFFFFFFFF & packet.read_int():
+                    return None
+                #TODO: validate checksum make_checksum
+                #TODO: normalize size
+
             # 1. Defragmentation
             if (sequence & defines.FRAGMENTED_PACKET) != 0:
                 # fragmented packet
@@ -80,7 +86,8 @@ class _protocol_base:
         if self._gamestate.message_seq + 1 > sequence:
              return None
         
-        raw = self._evaluator.decrypt_server_frame( sequence, packet, size )
+        compat = self._protocol_version == 68
+        raw = self._evaluator.decrypt_server_frame( sequence, packet, size, compat )
         if not raw:
             return None
 
@@ -90,7 +97,7 @@ class _protocol_base:
 
     def client_frame(self):
         #TODO: protocol 71
-        return self._evaluator.generate_client_frame()
+        return self._evaluator.generate_client_frame(self._protocol_version == 68)
 
 class _defragmentator:
     _FRAGMENT_SIZE = 1300
@@ -128,6 +135,6 @@ class q3v68(_protocol_base):
     def __init__(self, evaluator: clientstate.evaluator) -> None:
         super().__init__(68, evaluator)
 
-class q3v71(q3v68):
+class q3v71(_protocol_base):
     def __init__(self, evaluator: clientstate.evaluator) -> None:
         super().__init__(71, evaluator)

@@ -218,7 +218,7 @@ class evaluator(gamestate):
         with self._lock:
             self._userinfo = userinfo
 
-    def generate_client_frame(self):
+    def generate_client_frame(self, compat):
         # No connection - no need send frame
         if not self.gamestate.is_connected():
             return None
@@ -265,24 +265,36 @@ class evaluator(gamestate):
 
             writer.write_byte(defines.clc_ops_e.clc_EOF.value)
 
+            challenge = b""
+            if not compat:
+                challenge = utils.make_checksum(
+                    self._outgoing_seq, 
+                    self._challenge
+                ).to_bytes(4, "little", signed=False)
+
             packet = bytearray(b"" \
                 + self._outgoing_seq.to_bytes(4, "little", signed=True) \
                 + self._qport.to_bytes(2, "little", signed=False) \
+                + challenge \
                 + writer.data)
 
-            self.__encrypt_packet(server_id, sequence, command_seq, packet)
+            if compat:
+                self.__encrypt_packet(server_id, sequence, command_seq, packet)
 
             self._outgoing_seq += 1
 
             return packet
 
-    def decrypt_server_frame(self, sequence, packet, size):
+    def decrypt_server_frame(self, sequence, packet, size, compat):
         with self._lock:
 
             if self._message_seq + 1 > sequence:
                 return None
             
-            raw = self.__decrypt_packet( sequence, packet.read_data(size) )
+            if compat:
+                raw = self.__decrypt_packet( sequence, packet.read_data(size) )
+            else:
+                raw = packet.read_data(size)
 
             # Decode tail
             tail = utils.reader(raw)
