@@ -1,10 +1,5 @@
-from queue import Queue
 import time
 import q3net
-import threading
-import gc
-import sys
-import q3huff2
 
 ui = q3net.userinfo()
 ui['client']         = 'Q3 1.32e'
@@ -34,6 +29,11 @@ ui['cg_smoothClients'] = 1
 #\xp_name\ExcessivePlayer
 ui['teamoverlay']    = 1
 
+#NOTE:
+# CPMA server has authorization packets:
+# RECV: psohtua 7115109
+# SEND(9): htuatneilc 20343831371584843516760
+
 class handler(q3net.events_handler):
 
     def event_connected(self, gamestate, host, port, srv_id):
@@ -53,11 +53,14 @@ class handler(q3net.events_handler):
         pass
 
 def client():
-    #connection = q3net.connection("localhost", 27960, handler=handler())
+    # connect issue with
+    # 45.173.130.54:27960 baseq3 pure
+    #
+    #connection = q3net.connection("localhost", 27960, protocol= q3net.protocol_q3v71, handler=handler())
     #connection = q3net.connection("167.71.55.62", 27960, handler=handler()) #CPMA pure
     #connection = q3net.connection("89.221.217.148", 27980, handler=handler()) #e+
-    connection = q3net.connection("73.150.221.251", 27960, handler=handler()) #E+ pure
-    #46.160.53.39:27960
+    #connection = q3net.connection("73.150.221.251", 27960, handler=handler()) #E+ pure
+    connection = q3net.connection("sbct.ru", 27960, protocol= q3net.protocol_q3v71, handler=handler())
     connection.connect(userinfo= ui)
 
     while True:

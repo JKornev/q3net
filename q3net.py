@@ -318,7 +318,7 @@ class connection(_worker):
                     if not packet: # defragmentation
                         continue
                 except Exception:
-                    print(traceback.print_exc())
+                    print(traceback.print_exc()) #TODO: remove a print
                     continue
                 
                 # try to complete request if it exists

@@ -31,9 +31,10 @@ class _protocol_base:
 
         if utils.connection_sequence(sequence):
             if self._protocol_version == 71:
-                checksum = utils.make_checksum(sequence, self._gamestate.challenge) 
+                checksum = utils.make_checksum(sequence& ~defines.FRAGMENTED_PACKET, self._gamestate.challenge) 
                 if checksum != 0xFFFFFFFF & packet.read_int():
                     return None
+                size = size - 4
                 #TODO: validate checksum make_checksum
                 #TODO: normalize size
 
