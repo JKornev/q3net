@@ -50,6 +50,7 @@ class _gamestate_base:
         self._server_commands   = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
         self._config_strings    = collections.OrderedDict()
         self._mode              = 'baseq3'
+        self._client_num        = -1
 
     def __default_userinfo(self):
         ui = userinfo()
@@ -125,6 +126,11 @@ class gamestate(_gamestate_base):
     def checksum_feed(self):
         with self._lock:
             return self._checksum_feed
+
+    @property
+    def client_num(self):
+        with self._lock:
+            return self._client_num
 
     @property
     def server_host(self):
@@ -386,7 +392,9 @@ class evaluator(gamestate):
                 if self._pure and not self._pure_ack:
                     self._pure_ack = True
                     self.queue_command(self.__get_pure_checksums_packet(self._mode))
-            
+                # client_num comes together with checksum_feed
+                self._client_num = packet.client_num
+
             if disconnect:
                 self._handler.event_disconnected(self, disconnect_reason)
                 self._state = defines.connstate_t.CA_DISCONNECTED

@@ -167,6 +167,7 @@ class parse_server_frame(parser_base):
                 frame.config_string.update(gs.config_string)
                 frame.baselines.extend(gs.baselines)
                 frame.checksum_feed = gs.checksum_feed
+                frame.client_num = gs.client_num
                 if gs.sequence > frame.command_seq:
                     frame.command_seq = gs.sequence
             elif cmd == defines.svc_ops_e.svc_configstring.value:
