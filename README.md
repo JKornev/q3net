@@ -17,15 +17,15 @@ Python library, emulator for Quake 3 connection
 - Other stuff
 
 ### Installation
-You are able to download library from PyPi repo
+You are able to get the library from PyPi repo
 ```python
 python -m pip install q3net
 ```
-Now just include it to your project
+Now just include it into your project
 ```python
 import q3net
 ```
-Also you are able to copy q3net to your project manualy, just create a library dir `<your_project>/q3net` and copy q3net to it. Or you can use git submodules
+Also you can copy q3net manualy or you use it as a git submodule
 ```
 cd <your project>\libs
 mkdir q3net
