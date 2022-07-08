@@ -3,9 +3,9 @@ Python library, emulator for Quake 3 connection
 
 **Live demo**: [@qv3k_bot](https://t.me/qv3k_bot) - q3 client with telegram bot interface
 
-### Requires
+### Requirements
 - Python 3.5+
-- q3huff2 (this is a clone of q3huff library, source has a memory leak)
+- q3huff2 (clone of q3huff library with a memory leak fix)
 
 ### Features
 - Stable quake3 connection (vanilla, osp, e+, a bit of cpma)
