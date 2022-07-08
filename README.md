@@ -1,35 +1,53 @@
 # q3net
-Python library that emulates a Quake 3 connection
+Python library, emulator for Quake 3 connection
 
-#### Live demo
-[@qv3k_bot](https://t.me/qv3k_bot) q3 client with telegram bot interface
+**Live demo**: [@qv3k_bot](https://t.me/qv3k_bot) - q3 client with telegram bot interface
 
-## Features
+### Requires
+- Python 3.5+
+- q3huff2 (this is a clone of q3huff library, source has a memory leak)
+
+### Features
 - Stable quake3 connection (vanilla, osp, e+, a bit of cpma)
-- Connected and connection-less communication with a server
+- Connected and connection-less communication with a server, master-server and auth-server
 - Protocols 68 and 71
 - Supports sv_pure 1
 - Supports proxy connection (qwfwd)
 - Connection profile customization
+- Other stuff
 
-etc
-
-## Installation
+### Installation
 You are ably to download library from PyPi repo
 ```python
 python -m pip install q3net
 ```
-Then just include it to your project
+Now just include it to your project
+```python
+import q3net
+```
+Also you are able to copy q3net to your project manualy, just create a library dir `<your_project>/q3net` and copy q3net to it. Or you can use git submodules
+```
+cd <your project>\libs
+mkdir q3net
+git clone q3net
+...
+```
+
+### How to
+Let's open a simple connection
 ```python
 import q3net
 
 # open connection to localhost server
 connection = q3net.connection("localhost", 27960)
 if connection.connect():
+    # welcome other players
     connection.send("say hi")
     connection.disconnect()
 
 # gracefully destroy connection
 connection.terminate()
 ```
-Also you are able to copy a project and include a library manually and even include it using git submodules
+Keep in mind when you create a `q3net.connection` object it internally creates a seporated worker thread. Therefore to avoid app freezes you need to terminate each `q3net.connection` object by calling method `q3net.connection.terminate()` in the end.
+
+
