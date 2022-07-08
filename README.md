@@ -17,7 +17,7 @@ Python library, emulator for Quake 3 connection
 - Other stuff
 
 ### Installation
-You are ably to download library from PyPi repo
+You are able to download library from PyPi repo
 ```python
 python -m pip install q3net
 ```
@@ -34,20 +34,28 @@ git clone q3net
 ```
 
 ### How to
-Let's open a simple connection
+First lets try to query information from the server without a connection
 ```python
 import q3net
+# query server info and status
+connection = q3net.connection("localhost", 27960)
+print(connection.request(q3net.get_info_request()).data)
+print(connection.request(q3net.get_status_request()).data)
+connection.terminate()
+```
 
+Now let's open a simple connection
+```python
+import q3net
 # open connection to localhost server
 connection = q3net.connection("localhost", 27960)
 if connection.connect():
     # welcome other players
     connection.send("say hi")
     connection.disconnect()
-
 # gracefully destroy connection
 connection.terminate()
 ```
 Keep in mind when you create a `q3net.connection` object it internally creates a seporated worker thread. Therefore to avoid app freezes you need to terminate each `q3net.connection` object by calling method `q3net.connection.terminate()` in the end.
 
-
+Other more detailed examples you can find in `\examples` folder
