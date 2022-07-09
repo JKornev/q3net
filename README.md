@@ -3,11 +3,11 @@ Python library, emulator for Quake 3 connection
 
 **Live demo**: [@qv3k_bot](https://t.me/qv3k_bot) - q3 client with telegram bot interface
 
-### Requirements
+## Requirements
 - Python 3.5+
-- q3huff2 (clone of q3huff library with a memory leak fix)
+- [q3huff2](https://pypi.org/project/q3huff2/) (clone of [q3huff](https://pypi.org/project/q3huff/) library with a [memory leak fix](https://github.com/JKornev/python-q3huff/commit/7d88c6ea90667273b32c0bfb4954f8d8826e693f))
 
-### Features
+## Features
 - Stable quake3 connection (vanilla, osp, e+, a bit of cpma)
 - Connected and connection-less communication with a server, master-server and auth-server
 - Protocols 68 and 71
@@ -16,7 +16,7 @@ Python library, emulator for Quake 3 connection
 - Connection profile customization
 - Other stuff
 
-### Installation
+## Installation
 You are able to get the library from PyPi repo
 ```python
 python -m pip install q3net
@@ -33,7 +33,7 @@ git clone q3net
 ...
 ```
 
-### How to
+## How to
 Query information from the server without opening a connection
 ```python
 import q3net
