@@ -34,7 +34,7 @@ git clone q3net
 ```
 
 ### How to
-First lets try to query information from the server without a connection
+Query information from the server without opening a connection
 ```python
 import q3net
 # query server info and status
@@ -44,7 +44,7 @@ print(connection.request(q3net.get_status_request()).data)
 connection.terminate()
 ```
 
-Now let's open a simple connection
+Open a connection with a server
 ```python
 import q3net
 # open connection to localhost server
@@ -56,6 +56,35 @@ if connection.connect():
 # gracefully destroy connection
 connection.terminate()
 ```
-Keep in mind when you create a `q3net.connection` object it internally creates a seporated worker thread. Therefore to avoid app freezes you need to terminate each `q3net.connection` object by calling method `q3net.connection.terminate()` in the end.
+Keep in mind when you create a `q3net.connection` object it internally creates a separated worker thread. Therefore to avoid app freezes you need to terminate each `q3net.connection` object by calling method `q3net.connection.terminate()` in the end.
+
+Another example shows handling connection events
+```python
+import q3net, time
+
+class handler(q3net.events_handler):
+    def event_connected(self, gamestate, host, port, server_id):
+        print(f"Connected to {host}:{port} id:{srv_id}")
+
+    def event_disconnected(self, gamestate, reason):
+        print(f"Disconnected, reason : {reason}")
+
+    def event_packet(self, gamestate, packet):
+        pass # frequent event, no need spam
+
+    def event_command(self, gamestate, sequence, command):
+        print(f"Command {sequence} : {command}")
+
+    def event_configstring(self, gamestate, index, value):
+        print(f"ConfigString {index} : {value}")
+
+connection = q3net.connection("localhost", 27960, handler=handler())
+if connection.connect():
+    time.sleep(5.0) # give it work a bit
+    connection.disconnect()
+    
+connection.terminate()
+```
+`q3net.events_handler` class handles connection events from different thread (connection worker) therefore you have to worry about syncronization if you want to communicate with a main thread that opened a connection.
 
 Other more detailed examples you can find in `\examples` folder
