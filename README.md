@@ -86,4 +86,8 @@ connection.terminate()
 ```
 `q3net.events_handler` class handles connection events from different thread (connection worker) therefore you have to worry about syncronization if you want to communicate with a main thread that opened a connection.
 
-Other more detailed examples you can find in `\examples` folder
+Other more detailed examples in [\examples](https://github.com/JKornev/q3net/tree/main/examples) folder:
+- [client.py](https://github.com/JKornev/q3net/tree/main/examples) - simple command-line quake3 client
+- [master_server.py](https://github.com/JKornev/q3net/tree/main/examples) - query information from quake3 master-server
+- [proxy.py](https://github.com/JKornev/q3net/tree/main/examples) - an example of using QWFWD proxy
+- [server_info.py](https://github.com/JKornev/q3net/tree/main/examples) - get server info using connection-less requests
