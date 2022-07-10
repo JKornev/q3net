@@ -12,7 +12,7 @@ Python library, emulator for Quake 3 connection
 - Connected and connection-less communication with a server, master-server and auth-server
 - Protocols 68 and 71
 - Supports sv_pure 1
-- Supports proxy connection (qwfwd)
+- Supports proxy connection ([qwfwd](https://github.com/QW-Group/qwfwd))
 - Player customization
 - Other stuff
 
