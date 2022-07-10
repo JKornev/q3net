@@ -34,7 +34,7 @@ class command_request:
         self.resp_command = response
         self.require_connection = require_connection
 
-class getservers_request(command_request):
+class get_servers_request(command_request):
     def __init__(self, protocol = 68):
         super().__init__(b"getservers " + str(protocol).encode(), "getserversResponse")
 

@@ -54,17 +54,15 @@ class parser_getservers(parser_base):
         i = 18
         while (i + 7) < len(packet):
             assert(packet[i] == '\\')
-            address = "{}.{}.{}.{}:{}".format(
+            address = "{}.{}.{}.{}".format(
                 ord(packet[i+1]), 
                 ord(packet[i+2]), 
                 ord(packet[i+3]), 
-                ord(packet[i+4]), 
-                ord(packet[i+6]) | (ord(packet[i+5]) << 8)
+                ord(packet[i+4])
             )
-            servers.append(address)
+            port = ord(packet[i+6]) | (ord(packet[i+5]) << 8)
+            servers.append((address, port))
             i += 7
-        servers.append(len(servers))
-        servers.append(packet[i:])
         return server_packet(servers, self._command) 
 
 class parser_print(parser_base):
