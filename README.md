@@ -49,10 +49,10 @@ Open a connection with a server
 import q3net
 # open connection to localhost server
 connection = q3net.connection("localhost", 27960)
-if connection.connect():
-    # welcome other players
-    connection.send("say hi")
-    connection.disconnect()
+connection.connect()
+# welcome other players
+connection.send("say hi")
+connection.disconnect()
 # gracefully destroy connection
 connection.terminate()
 ```
@@ -79,10 +79,9 @@ class handler(q3net.events_handler):
         print(f"ConfigString {index} : {value}")
 
 connection = q3net.connection("localhost", 27960, handler=handler())
-if connection.connect():
-    time.sleep(5.0) # give it work a bit
-    connection.disconnect()
-    
+connection.connect()
+time.sleep(5.0) # give it work a bit
+connection.disconnect()
 connection.terminate()
 ```
 `q3net.events_handler` class handles connection events from different thread (connection worker) therefore you have to worry about syncronization if you want to communicate with a main thread that opened a connection.
