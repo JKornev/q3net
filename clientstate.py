@@ -1,10 +1,10 @@
+from .defines import *
+from .utils import *
+
 import threading
 import random
 import collections
-import defines
-import packets
 import shlex
-import utils
 import q3huff2
 
 class userinfo(collections.OrderedDict): 
@@ -27,10 +27,10 @@ class userinfo(collections.OrderedDict):
 
 class _gamestate_base:
     def __init__(self, host, port) -> None:
-        self._state         = defines.connstate_t.CA_DISCONNECTED
+        self._state         = connstate_t.CA_DISCONNECTED
         self._server_host   = host
         self._server_port   = port
-        self._userinfo      = self.__default_userinfo()
+        self._userinfo      = default_userinfo()
         self._qport         = random.randint(0, 0xFFFF)
         self._reset_state()
 
@@ -46,31 +46,11 @@ class _gamestate_base:
         self._pure              = False
         self._pure_ack          = False
         self._checksum_feed     = 0
-        self._reliable_commands = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
-        self._server_commands   = ["" for x in range(defines.MAX_RELIABLE_COMMANDS)]
+        self._reliable_commands = ["" for x in range(MAX_RELIABLE_COMMANDS)]
+        self._server_commands   = ["" for x in range(MAX_RELIABLE_COMMANDS)]
         self._config_strings    = collections.OrderedDict()
         self._mode              = 'baseq3'
         self._client_num        = -1
-
-    def __default_userinfo(self):
-        ui = userinfo()
-        ui['client']         = 'Q3 1.32b'
-        ui['name']           = 'UnnamedPlayer'
-        ui['model']          = 'sarge'
-        ui['headmodel']      = 'sarge'
-        ui['team_model']     = 'james'
-        ui['team_headmodel'] = 'james'
-        ui['handicap']       = 100
-        ui['teamtask']       = 0
-        ui['sex']            = 'male'
-        ui['color1']         = 1
-        ui['color2']         = 2
-        ui['rate']           = 25000
-        ui['snaps']          = 40
-        ui['cl_maxpackets']  = 125
-        ui['cl_timeNudge']   = 0
-        ui['cl_anonymous']   = 0
-        return ui
 
 class gamestate(_gamestate_base):
     def __init__(self, host, port) -> None:
@@ -160,7 +140,7 @@ class gamestate(_gamestate_base):
 
     def is_connected(self) -> bool:
         with self._lock:
-            return self._state.value >= defines.connstate_t.CA_CONNECTED.value
+            return self._state.value >= connstate_t.CA_CONNECTED.value
 
     def queue_command(self, command: str) -> int:
         with self._lock:
@@ -180,7 +160,7 @@ class events_handler:
     def event_disconnected(self, gamestate: gamestate, reason: str):
         pass # stub
 
-    def event_packet(self, gamestate: gamestate, packet: packets.server_packet):
+    def event_packet(self, gamestate: gamestate, packet: server_packet):
         pass # stub
 
     def event_command(self, gamestate: gamestate, seq: int, cmd: str):
@@ -202,20 +182,20 @@ class evaluator(gamestate):
         # Notify about a new packet
         self._handler.event_packet(self, packet)
 
-        if utils.connection_sequence(packet.sequence):
+        if connection_sequence(packet.sequence):
             self._execute_connected(packet)
         else:
             self._execute_connection_less(packet)
 
     def disconnect(self):
-        self.change_state(defines.connstate_t.CA_DISCONNECTED)
+        self.change_state(connstate_t.CA_DISCONNECTED)
 
     def change_state(self, to, frm = None):
         with self._lock:
             if frm and self._state != frm:
                 raise Exception(f"Current state {self._state} != {frm}")
 
-            if to == defines.connstate_t.CA_DISCONNECTED and self._state == defines.connstate_t.CA_ACTIVE:
+            if to == connstate_t.CA_DISCONNECTED and self._state == connstate_t.CA_ACTIVE:
                 self._handler.event_disconnected(self, "manual")
 
             self._state = to
@@ -254,12 +234,12 @@ class evaluator(gamestate):
             # commands
             for i in range(self._reliable_ack + 1, self._reliable_seq + 1):
                 inx = i % 64
-                writer.write_byte(defines.clc_ops_e.clc_clientCommand.value)
+                writer.write_byte(clc_ops_e.clc_clientCommand.value)
                 writer.write_long(i)
                 writer.write_string(self._reliable_commands[inx])
 
             # usermove
-            writer.write_byte(defines.clc_ops_e.clc_moveNoDelta.value)
+            writer.write_byte(clc_ops_e.clc_moveNoDelta.value)
             writer.write_byte(1) # cmd count
             if self._server_time == 0:
                 writer.write_bits(1, 1) # time delta bit
@@ -269,11 +249,11 @@ class evaluator(gamestate):
                 writer.write_long(self._server_time + 100)
             writer.write_bits(0, 1) # no changes
 
-            writer.write_byte(defines.clc_ops_e.clc_EOF.value)
+            writer.write_byte(clc_ops_e.clc_EOF.value)
 
             challenge = b""
             if not compat:
-                challenge = utils.make_checksum(
+                challenge = make_checksum(
                     self._outgoing_seq, 
                     self._challenge
                 ).to_bytes(4, "little", signed=False)
@@ -303,14 +283,14 @@ class evaluator(gamestate):
                 raw = packet.read_data(size)
 
             # Decode tail
-            tail = utils.reader(raw)
+            tail = reader(raw)
             tail.compression(True)
             self._message_seq = sequence
             ack = tail.read_uint()
             self._reliable_ack = ack
 
             #Note: not sure why it works this way but the hack is implemented in an engine source
-            if self._reliable_ack < self._reliable_seq - defines.MAX_RELIABLE_COMMANDS:
+            if self._reliable_ack < self._reliable_seq - MAX_RELIABLE_COMMANDS:
                 self._reliable_ack = self._reliable_seq
 
             return tail
@@ -322,36 +302,36 @@ class evaluator(gamestate):
 
         with self._lock:
             # Step 1: getting challenge
-            if self._state == defines.connstate_t.CA_CONNECTING:
+            if self._state == connstate_t.CA_CONNECTING:
                 if packet.command == "challengeResponse":
                     self._reset_state()
                     self._challenge = packet.data[0]
-                    self._state = defines.connstate_t.CA_CHALLENGING
+                    self._state = connstate_t.CA_CHALLENGING
 
             # Step 2: connection approval
-            if self._state == defines.connstate_t.CA_CHALLENGING:
+            if self._state == connstate_t.CA_CHALLENGING:
                 if packet.command == "connectResponse" and (not packet.data or self._challenge == packet.data):
-                    self._state = defines.connstate_t.CA_CONNECTED
+                    self._state = connstate_t.CA_CONNECTED
 
 
     def _execute_connected(self, packet):
         with self._lock:
             # No need handle connected packets without connection
-            if self._state == defines.connstate_t.CA_DISCONNECTED:
+            if self._state == connstate_t.CA_DISCONNECTED:
                 return
 
             # Step 3: connection established
-            if self._state == defines.connstate_t.CA_CONNECTED:
-                self._state = defines.connstate_t.CA_PRIMED
+            if self._state == connstate_t.CA_CONNECTED:
+                self._state = connstate_t.CA_PRIMED
 
             # Load config string
             for inx, cfg in packet.config_string.items():
                 self.__load_config_string(inx, cfg)
 
-                if defines.configstr_t.CS_SYSTEMINFO.value == inx:
+                if configstr_t.CS_SYSTEMINFO.value == inx:
                     # Step 4: make connection completed on the first gamestate frame
-                    if self._state == defines.connstate_t.CA_PRIMED:
-                        self._state = defines.connstate_t.CA_ACTIVE
+                    if self._state == connstate_t.CA_PRIMED:
+                        self._state = connstate_t.CA_ACTIVE
                         self._handler.event_connected(self, self._server_host, self._server_port, self._server_id)
 
             # Load commands
@@ -397,7 +377,7 @@ class evaluator(gamestate):
 
             if disconnect:
                 self._handler.event_disconnected(self, disconnect_reason)
-                self._state = defines.connstate_t.CA_DISCONNECTED
+                self._state = connstate_t.CA_DISCONNECTED
 
     def __load_config_string(self, index, value):
         if not value:
@@ -406,7 +386,7 @@ class evaluator(gamestate):
                 self._config_strings.pop(index)
             return
 
-        if defines.configstr_t.CS_SYSTEMINFO.value == index:
+        if configstr_t.CS_SYSTEMINFO.value == index:
             ui = userinfo()
             ui.deserialize(value)
             self._server_id = int(ui['sv_serverid'])
@@ -463,6 +443,26 @@ class evaluator(gamestate):
 
     def __get_pure_checksums_packet(self, mode):
         feed = self.gamestate.checksum_feed
-        cgame = utils.calculate_checksum(mode, "cgame", feed)
-        ui    = utils.calculate_checksum(mode, "ui", feed)
+        cgame = calculate_checksum(mode, "cgame", feed)
+        ui    = calculate_checksum(mode, "ui", feed)
         return "cp {} {} {} @ {}".format( self.gamestate.server_id, cgame, ui, feed )
+
+def default_userinfo():
+    ui = userinfo()
+    ui['client']         = 'Q3 1.32b'
+    ui['name']           = 'UnnamedPlayer'
+    ui['model']          = 'sarge'
+    ui['headmodel']      = 'sarge'
+    ui['team_model']     = 'james'
+    ui['team_headmodel'] = 'james'
+    ui['handicap']       = 100
+    ui['teamtask']       = 0
+    ui['sex']            = 'male'
+    ui['color1']         = 1
+    ui['color2']         = 2
+    ui['rate']           = 25000
+    ui['snaps']          = 40
+    ui['cl_maxpackets']  = 125
+    ui['cl_timeNudge']   = 0
+    ui['cl_anonymous']   = 0
+    return ui

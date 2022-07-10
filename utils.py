@@ -1,7 +1,8 @@
+from .defines import *
+
 import socket
 import hashlib
 import q3huff2
-import defines
 
 # ========================
 #   Network
@@ -24,6 +25,12 @@ class udp_transport:
     def recv(self, size) -> udp_packet:
         return udp_packet( self._socket.recvfrom(size) )
 
+class server_packet:
+    def __init__(self, data = None, command = None, sequence = -1) -> None:
+        self.sequence = sequence
+        self.command = command
+        self.data = data
+        
 # ========================
 #   Serialization
 
@@ -81,7 +88,7 @@ class reader:
 #   Misc
 
 def connection_sequence(sequence : int) -> bool:
-    return not (sequence == defines.NO_CONNECTION_SEQUENCE)
+    return not (sequence == NO_CONNECTION_SEQUENCE)
 
 def make_checksum(sequence, challenge):
     return 0xFFFFFFFF & (challenge ^ (sequence * challenge))

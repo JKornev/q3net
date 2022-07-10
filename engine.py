@@ -1,29 +1,15 @@
+from .clientstate import *
+from .protocol import *
+from .packets import *
+from .utils import *
+from .defines import *
+
 import threading
 import random
 import traceback
 import time
 import socket
-import clientstate
-import protocol
-import packets
-import utils
-import defines
 import q3huff2
-
-# ========================
-#   External aliases
-
-userinfo = clientstate.userinfo
-
-gamestate = clientstate.gamestate
-
-events_handler = clientstate.events_handler
-
-protocol_q3v68 = protocol.q3v68
-
-protocol_q3v71 = protocol.q3v71
-
-server_packet = packets.server_packet
 
 # ========================
 #   Quake3 requests
@@ -128,17 +114,17 @@ class _requestor:
             self._response = None
             self._event.clear()
 
-    def try_complete(self, response: packets.server_packet, gamestate):
+    def try_complete(self, response: server_packet, gamestate):
         with self._mutex:
 
             if not self._busy:
                 return
 
-            if not self._request.require_connection and utils.connection_sequence(response.sequence):
+            if not self._request.require_connection and connection_sequence(response.sequence):
                 return
 
             if self._request.require_connection:
-                if not utils.connection_sequence(response.sequence):
+                if not connection_sequence(response.sequence):
                     return
                 if self._sequence > gamestate.reliable_ack:
                     return
@@ -173,9 +159,9 @@ class connection(_worker):
         # Network
         self._host = host
         self._port = port
-        self._transport = utils.udp_transport(host, self._port, self._frame_timeout)
+        self._transport = udp_transport(host, self._port, self._frame_timeout)
         # Protocol
-        self._gs_evaluator = clientstate.evaluator(handler, self._host, self._port)
+        self._gs_evaluator = evaluator(handler, self._host, self._port)
         self._protocol = protocol(self._gs_evaluator)
         # Request
         self._request_lock = threading.Lock()
@@ -183,15 +169,15 @@ class connection(_worker):
         # Open worker thread
         super().__init__()
 
-    def connect(self, userinfo: clientstate.userinfo = None, attempts = 10, proxy = None):
+    def connect(self, userinfo: userinfo = None, attempts = 10, proxy = None):
         if self.gamestate.is_connected():
             raise Exception("Already connected")
         
         try:
             # Get challenge
             self._gs_evaluator.change_state(
-                frm = defines.connstate_t.CA_DISCONNECTED, 
-                to = defines.connstate_t.CA_CONNECTING
+                frm = connstate_t.CA_DISCONNECTED, 
+                to = connstate_t.CA_CONNECTING
             )
 
             #TODO: instead of such check a _protocol might generate request by its own
@@ -229,7 +215,7 @@ class connection(_worker):
                 if not response:
                     raise Exception("Can't receive connection response")
 
-                self._gs_evaluator.change_state( to = defines.connstate_t.CA_DISCONNECTED )
+                self._gs_evaluator.change_state( to = connstate_t.CA_DISCONNECTED )
                 self.connect(userinfo= userinfo, attempts= attempts, proxy= None)
             else:
                 # Normal connection
@@ -259,7 +245,7 @@ class connection(_worker):
             if request.require_connection:
                 seqence = self._protocol.queue_command(request.req_command)
             else:
-                self._transport.send( utils.int_to_bytes(defines.NO_CONNECTION_SEQUENCE) + request.req_command)
+                self._transport.send( int_to_bytes(NO_CONNECTION_SEQUENCE) + request.req_command)
                 seqence = None # no sequence is needed
                 
             self._requestor.push(request, seqence)
@@ -276,7 +262,7 @@ class connection(_worker):
                 seqence = self._protocol.queue_command(command)
             else:
                 # Send directly if it's a connection-less command
-                self._transport.send( utils.int_to_bytes(defines.NO_CONNECTION_SEQUENCE) + command.encode() )
+                self._transport.send( int_to_bytes(NO_CONNECTION_SEQUENCE) + command.encode() )
                 seqence = None
             return seqence
 

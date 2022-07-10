@@ -1,14 +1,8 @@
-import clientstate
-import defines
+from .clientstate import *
+from .defines import *
 
 # ========================
 #   Common packet
-
-class server_packet:
-    def __init__(self, data = None, command = None, sequence = -1) -> None:
-        self.sequence = sequence
-        self.command = command
-        self.data = data
 
 class server_frame(server_packet):
     def __init__(self, sequence) -> None:
@@ -74,7 +68,7 @@ class parser_print(parser_base):
         assert(len(tokens) == 2)
         return server_packet( tokens[1].rstrip(), self._command ) #TODO: return print packet
 
-class parse_status(parser_base):
+class parser_status(parser_base):
     def __init__(self) -> None:
         super().__init__("statusResponse")
 
@@ -83,7 +77,7 @@ class parse_status(parser_base):
         lines = packet.split('\n')
         assert(len(lines) >= 2)
 
-        info = clientstate.userinfo()
+        info = userinfo()
         info.deserialize(lines[1])
 
         players = []
@@ -97,18 +91,18 @@ class parse_status(parser_base):
 
         return server_packet( (info, players), self._command)
 
-class parse_info(parser_base):
+class parser_info(parser_base):
     def __init__(self) -> None:
         super().__init__("infoResponse")
 
     def parse(self, packet):
         lines = packet.splitlines()
         assert(len(lines) == 2)
-        ui = clientstate.userinfo()
+        ui = userinfo()
         ui.deserialize(lines[1])
         return server_packet(ui, self._command) 
 
-class parse_challenge(parser_base):
+class parser_challenge(parser_base):
     def __init__(self) -> None:
         super().__init__("challengeResponse")
 
@@ -130,7 +124,7 @@ class parse_challenge(parser_base):
 
         return server_packet( (challenge, clientChallenge, protocol), self._command )
 
-class parse_connect(parser_base):
+class parser_connect(parser_base):
     def __init__(self) -> None:
         super().__init__("connectResponse")
 
@@ -146,7 +140,7 @@ class parse_connect(parser_base):
 # ========================
 #   Server frame parser
 
-class parse_server_frame(parser_base):
+class parser_server_frame(parser_base):
     def __init__(self) -> None:
         super().__init__(None)
 
@@ -156,11 +150,11 @@ class parse_server_frame(parser_base):
         while True:
             cmd = packet.read_uchar()
             
-            if cmd == defines.svc_ops_e.svc_nop.value:
+            if cmd == svc_ops_e.svc_nop.value:
                 continue
-            elif cmd == defines.svc_ops_e.svc_EOF.value or cmd == -1:
+            elif cmd == svc_ops_e.svc_EOF.value or cmd == -1:
                 break
-            elif cmd == defines.svc_ops_e.svc_gamestate.value:
+            elif cmd == svc_ops_e.svc_gamestate.value:
                 gs = server_gamestate(packet)
                 frame.config_string.update(gs.config_string)
                 frame.baselines.extend(gs.baselines)
@@ -168,28 +162,28 @@ class parse_server_frame(parser_base):
                 frame.client_num = gs.client_num
                 if gs.sequence > frame.command_seq:
                     frame.command_seq = gs.sequence
-            elif cmd == defines.svc_ops_e.svc_configstring.value:
+            elif cmd == svc_ops_e.svc_configstring.value:
                 inx = packet.read_ushort()
                 value = packet.read_bigstring()
                 frame.config_string[inx] = value
-            elif cmd == defines.svc_ops_e.svc_baseline.value:
+            elif cmd == svc_ops_e.svc_baseline.value:
                 frame.baselines.append( entity_state(packet) )
-            elif cmd == defines.svc_ops_e.svc_serverCommand.value:
+            elif cmd == svc_ops_e.svc_serverCommand.value:
                 seq = packet.read_uint() # reliableAcknowledge
                 txt = packet.read_string()
                 frame.commands.append((seq, txt))
                 if seq > frame.command_seq:
                     frame.command_seq = seq
-            elif cmd == defines.svc_ops_e.svc_download.value:
+            elif cmd == svc_ops_e.svc_download.value:
                 break
-            elif cmd == defines.svc_ops_e.svc_snapshot.value:
+            elif cmd == svc_ops_e.svc_snapshot.value:
                 #TODO: sometimes snapshot parsing breaks packet
                 #      Reproduction: connect to a server and make a kick from the server
                 frame.snapshot = server_snapshot(packet)
-            elif cmd == defines.svc_ops_e.svc_voipSpeex.value:
+            elif cmd == svc_ops_e.svc_voipSpeex.value:
                 assert(False)
                 break
-            elif cmd == defines.svc_ops_e.svc_voipOpus.value:
+            elif cmd == svc_ops_e.svc_voipOpus.value:
                 assert(False)
                 break
             else:
@@ -227,17 +221,17 @@ class server_gamestate:
         while True:
             cmd = packet.read_uchar()
             assert(
-                cmd == defines.svc_ops_e.svc_EOF.value 
-                or cmd == defines.svc_ops_e.svc_configstring.value 
-                or cmd == defines.svc_ops_e.svc_baseline.value
+                cmd == svc_ops_e.svc_EOF.value 
+                or cmd == svc_ops_e.svc_configstring.value 
+                or cmd == svc_ops_e.svc_baseline.value
             )
-            if cmd == defines.svc_ops_e.svc_EOF.value:
+            if cmd == svc_ops_e.svc_EOF.value:
                 break
-            elif cmd == defines.svc_ops_e.svc_configstring.value:
+            elif cmd == svc_ops_e.svc_configstring.value:
                 inx = packet.read_ushort()
                 value = packet.read_bigstring()
                 self.config_string[inx] = value
-            elif cmd == defines.svc_ops_e.svc_baseline.value:
+            elif cmd == svc_ops_e.svc_baseline.value:
                 self.baselines.append( entity_state(packet) )
 
         self.client_num = packet.read_uint()

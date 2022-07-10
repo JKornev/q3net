@@ -16,14 +16,14 @@ class configstr_t(enum.Enum):
 class connstate_t(enum.Enum):
     #CA_UNINITIALIZED    = 0
     CA_DISCONNECTED     = 1 # not talking to a server
-   #CA_AUTHORIZING      = 2 # not used any more, was checking cd key 
+    #CA_AUTHORIZING      = 2 # not used any more, was checking cd key 
     CA_CONNECTING       = 3 # sending request packets to the server
     CA_CHALLENGING      = 4 # sending challenge packets to the server
     CA_CONNECTED        = 5 # netchan_t established, getting gamestate
-   #CA_LOADING          = 6 # only during cgame initialization, never during main loop
+    #CA_LOADING          = 6 # only during cgame initialization, never during main loop
     CA_PRIMED           = 7 # got gamestate, waiting for first frame
     CA_ACTIVE           = 8 # game views should be displayed
-   #CA_CINEMATIC        = 9 # playing a cinematic or a static pic, not connected to a server
+    #CA_CINEMATIC        = 9 # playing a cinematic or a static pic, not connected to a server
 
 class svc_ops_e(enum.Enum):
 	svc_bad             = 0

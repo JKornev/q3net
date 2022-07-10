@@ -27,16 +27,24 @@ def client():
     try:
         host = sys.argv[1]
         port = int(sys.argv[2])
-        # Open a connection
-        connection = q3net.connection(host, port, handler= handler())
-        connection.connect()
         
+        # Create a connection object
+        connection = q3net.connection(host, port, handler= handler(), fps= 10)
+
+        # Customize a bit client profile
+        ui = q3net.default_userinfo()
+        ui['name'] = "Python"
+
+        # Open a connection
+        connection.connect(userinfo= ui)
+
+        # Commands loop
         while True:
             cmd = input(">")
             if cmd == "exit":
                 break
 
-            # Send a whole input to a server
+            # Send a whole input to the server
             # commands might be:
             #  say hi
             #  players
