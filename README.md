@@ -21,16 +21,17 @@ Q3net library is available in the PyPi repository
 ```python
 python -m pip install q3net
 ```
-Now just include it into your project
+Then just include it into your project
 ```python
 import q3net
 ```
-Also you can copy q3net manualy or you use it as a git submodule
+You can also copy q3net manualy to a project or add it as a git submodule
 ```
-cd <your project>\libs
-mkdir q3net
-git clone q3net
-...
+cd <your project>
+git submodule add https://github.com/JKornev/q3net.git q3net
+git add .
+git commit -m "q3net included to a project"
+python -m pip install q3huff2
 ```
 
 ## How to
