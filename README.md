@@ -13,11 +13,11 @@ Python library, emulator for Quake 3 connection
 - Protocols 68 and 71
 - Supports sv_pure 1
 - Supports proxy connection (qwfwd)
-- Connection profile customization
+- Player customization
 - Other stuff
 
 ## Installation
-You are able to get the library from PyPi repo
+Q3net library is available in the PyPi repository
 ```python
 python -m pip install q3net
 ```
@@ -34,7 +34,7 @@ git clone q3net
 ```
 
 ## How to
-Query information from the server without opening a connection
+Query information from the server without opening a full connection
 ```python
 import q3net
 # query server info and status
@@ -87,7 +87,7 @@ connection.terminate()
 `q3net.events_handler` class handles connection events from different thread (connection worker) therefore you have to worry about syncronization if you want to communicate with a main thread that opened a connection.
 
 Other more detailed examples in [\examples](https://github.com/JKornev/q3net/tree/main/examples) folder:
-- [client.py](https://github.com/JKornev/q3net/tree/main/examples) - simple command-line quake3 client
-- [master_server.py](https://github.com/JKornev/q3net/tree/main/examples) - query information from quake3 master-server
-- [proxy.py](https://github.com/JKornev/q3net/tree/main/examples) - an example of using QWFWD proxy
-- [server_info.py](https://github.com/JKornev/q3net/tree/main/examples) - get server info using connection-less requests
+- [client.py](https://github.com/JKornev/q3net/blob/main/examples/client.py) - simple command-line quake3 client
+- [master_server.py](https://github.com/JKornev/q3net/blob/main/examples/master_server.py) - query information from quake3 master-server
+- [proxy.py](https://github.com/JKornev/q3net/blob/main/examples/proxy.py) - an example of using QWFWD proxy
+- [server_info.py](https://github.com/JKornev/q3net/blob/main/examples/server_info.py) - get server info using connection-less requests
