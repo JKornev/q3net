@@ -1,6 +1,6 @@
 # ==================================
 #  Example - proxy.py
-#  Demo for connection through QWFWD proxy
+#  Connection over QWFWD proxy
 
 import q3net
 import time
