@@ -1,6 +1,6 @@
 # ==================================
 #  Example - master_server.py
-#  Simple example how to query a servers information from the master server
+#  Query a servers information from a master server
 
 import q3net
 from queue import Empty, Queue
