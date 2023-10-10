@@ -57,7 +57,7 @@ connection.disconnect()
 # gracefully destroy connection object
 connection.terminate()
 ```
-Keep in mind when you create a `q3net.connection` object it internally creates a separated worker thread. Therefore to avoid app freezes you need to terminate each `q3net.connection` object by calling method `q3net.connection.terminate()` in the end.
+Keep in mind when you create a `q3net.connection` object it internally creates a separated worker thread. Therefore to avoid app freezes and thread leaks you need to terminate each `q3net.connection` object by calling method `q3net.connection.terminate()` in the end.
 
 Another example shows handling connection events
 ```python
