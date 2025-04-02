@@ -5,7 +5,7 @@ Python library, emulator of Quake 3 connection
 
 ## Requirements
 - Python 3.5+
-- [q3huff2](https://pypi.org/project/q3huff2/) (clone of the [q3huff](https://pypi.org/project/q3huff/) library without the [memory leak fix](https://github.com/JKornev/python-q3huff/commit/7d88c6ea90667273b32c0bfb4954f8d8826e693f))
+- [q3huff2](https://pypi.org/project/q3huff2/) (clone of the [q3huff](https://pypi.org/project/q3huff/) library without the [memory leak issue](https://github.com/JKornev/python-q3huff/commit/7d88c6ea90667273b32c0bfb4954f8d8826e693f))
 
 ## Features
 - Stable quake3 connection (vanilla, osp, e+, a bit of cpma)
@@ -30,7 +30,7 @@ You can also copy q3net manually to your project or add it as a git submodule
 cd <your project>
 git submodule add https://github.com/JKornev/q3net.git q3net
 git add .
-git commit -m "q3net included to a project"
+git commit -m "include q3net library"
 python -m pip install q3huff2
 ```
 
@@ -87,7 +87,7 @@ connection.terminate()
 ```
 `q3net.events_handler` class handles connection events from different thread (connection worker) therefore you have to worry about syncronization if you want to communicate with a main thread that opened a connection.
 
-Other more detailed examples in [\examples](https://github.com/JKornev/q3net/tree/main/examples) folder:
+Other detailed examples in [\examples](https://github.com/JKornev/q3net/tree/main/examples) folder:
 - [client.py](https://github.com/JKornev/q3net/blob/main/examples/client.py) - simple command-line quake3 client
 - [master_server.py](https://github.com/JKornev/q3net/blob/main/examples/master_server.py) - query information from quake3 master-server
 - [proxy.py](https://github.com/JKornev/q3net/blob/main/examples/proxy.py) - an example of using QWFWD proxy
