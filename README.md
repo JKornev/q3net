@@ -65,7 +65,7 @@ import q3net, time
 
 class handler(q3net.events_handler):
     def event_connected(self, gamestate, host, port, server_id):
-        print(f"Connected to {host}:{port} id:{srv_id}")
+        print(f"Connected to {host}:{port} id:{server_id}")
 
     def event_disconnected(self, gamestate, reason):
         print(f"Disconnected, reason : {reason}")
