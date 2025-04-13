@@ -5,7 +5,7 @@ Python library, emulator of Quake 3 connection
 
 ## Requirements
 - Python 3.5+
-- [q3huff2](https://pypi.org/project/q3huff2/) (clone of the [q3huff](https://pypi.org/project/q3huff/) library without the [memory leak issue](https://github.com/JKornev/python-q3huff/commit/7d88c6ea90667273b32c0bfb4954f8d8826e693f))
+- [q3huff2](https://pypi.org/project/q3huff2/) (clone of [q3huff](https://pypi.org/project/q3huff/) library without the [memory leak issue](https://github.com/JKornev/python-q3huff/commit/7d88c6ea90667273b32c0bfb4954f8d8826e693f))
 
 ## Features
 - Stable quake3 connection (vanilla, osp, e+, a bit of cpma)
